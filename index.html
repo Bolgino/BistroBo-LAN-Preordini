@@ -14,11 +14,14 @@
   <!-- Config Firebase per preordini.html -->
   <script>
     const firebaseConfig = {
-      apiKey: "AIzaSyDxpd24nF3qmNrh8j40jxjhYzh1RC08DhI",
-      authDomain: "comande-6fb85.firebaseapp.com",
-      databaseURL: "https://comande-6fb85-default-rtdb.europe-west1.firebasedatabase.app",
-      projectId: "comande-6fb85"
-    };
+    apiKey: "AIzaSyCNxXvoeW0uLyY_IFORiOiWw6R6JsqkPDo",
+    authDomain: "bistrobo-lan.firebaseapp.com",
+    databaseURL: "https://bistrobo-lan-default-rtdb.firebaseio.com",
+    projectId: "bistrobo-lan",
+    storageBucket: "bistrobo-lan.firebasestorage.app",
+    messagingSenderId: "365256740458",
+    appId: "1:365256740458:web:f22d93ca387fe091168413"
+  };
 
     if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
