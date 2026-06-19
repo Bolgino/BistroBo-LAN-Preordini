@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BistroBò - Verifica Profilo</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
+    
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap');
+        body { font-family: 'Poppins', sans-serif; }
+    </style>
+</head>
+<body class="bg-gray-900 text-white min-h-screen flex items-center justify-center p-4">
+    <div class="bg-gray-800 p-8 rounded-3xl shadow-2xl max-w-md w-full text-center border-t-8 border-orange-500">
+        <div class="mb-6">
+            <div class="text-6xl mb-2">🥪</div>
+            <h1 class="text-3xl font-bold text-orange-500 tracking-tight">BistroBò</h1>
+        </div>
+
+        <div id="content-pre">
+            <h2 class="text-xl font-semibold mb-4 text-white">Il tuo profilo è in cottura!</h2>
+            <button id="btnVerifica" class="bg-orange-600 hover:bg-orange-500 text-white font-bold py-4 px-8 rounded-2xl w-full mb-4 transition-all">
+                👨‍🍳 Conferma Operazione
+            </button>
+        </div>
+
+        <div id="status-container" class="hidden">
+            <div id="icon-status" class="text-5xl mb-4"></div>
+            <p id="messaggio" class="text-lg font-medium px-2"></p>
+            <button id="btnTorna" class="mt-6 bg-gray-700 hover:bg-gray-600 text-white font-bold py-3 px-6 rounded-xl w-full hidden transition-all" onclick="window.location.href='index.html'">Vai al Login</button>
+        </div>
+        
+        <div class="mt-8 pt-6 border-t border-gray-700" id="footer-links">
+            <a href="index.html" class="text-orange-400 font-semibold">← Torna alla Home</a>
+        </div>
+    </div>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyCNxXvoeW0uLyY_IFORiOiWw6R6JsqkPDo",
+            authDomain: "bistrobo-lan.firebaseapp.com",
+            databaseURL: "https://bistrobo-lan-default-rtdb.firebaseio.com",
+            projectId: "bistrobo-lan",
+            storageBucket: "bistrobo-lan.firebasestorage.app",
+            messagingSenderId: "365256740458",
+            appId: "1:365256740458:web:f22d93ca387fe091168413"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+
+        // Prende UID e TOKEN dal link magico
+        const urlParams = new URLSearchParams(window.location.search);
+        const uid = urlParams.get('uid'); 
+        const token = urlParams.get('token'); 
+
+        const btnVerifica = document.getElementById('btnVerifica');
+        const contentPre = document.getElementById('content-pre');
+        const statusContainer = document.getElementById('status-container');
+        const messaggio = document.getElementById('messaggio');
+        const btnTorna = document.getElementById('btnTorna');
+
+        btnVerifica.addEventListener('click', async () => {
+            if(!uid || !token) {
+                showStatus("❌", "Link non valido o scaduto.", "text-red-400");
+                return;
+            }
+            try {
+                btnVerifica.disabled = true;
+                btnVerifica.innerText = "Cottura in corso...";
+
+                // Sblocca l'utente inviando il token di sicurezza
+                await db.ref("utenti/" + uid).update({ 
+                    email_verificata: true,
+                    token_inserito: token 
+                });
+
+                showStatus("✅", "Ottimo Chef! Email verificata con successo. Ora puoi accedere.", "text-green-400");
+                btnTorna.classList.remove('hidden');
+                document.getElementById('footer-links').classList.add('hidden');
+
+            } catch (error) {
+                showStatus("⚠️", "Impossibile verificare l'account. Il codice potrebbe essere errato o già utilizzato.", "text-yellow-400");
+            }
+        });
+
+        function showStatus(icon, text, colorClass) {
+            contentPre.classList.add('hidden');
+            statusContainer.classList.remove('hidden');
+            document.getElementById('icon-status').innerText = icon;
+            messaggio.innerText = text;
+            messaggio.className = "text-lg font-medium mt-2 " + colorClass;
+        }
+    </script>
+</body>
+</html>
