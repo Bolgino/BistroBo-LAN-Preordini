@@ -31,7 +31,6 @@
         <div id="status-container" class="hidden">
             <div id="icon-status" class="text-5xl mb-4"></div>
             <p id="messaggio" class="text-lg font-medium px-2"></p>
-            <button id="btnTorna" class="mt-6 bg-gray-700 hover:bg-gray-600 text-white font-bold py-3 px-6 rounded-xl w-full hidden transition-all" onclick="window.location.href='index.html'">Vai al Login</button>
         </div>
         
         <div class="mt-8 pt-6 border-t border-gray-700" id="footer-links">
@@ -78,8 +77,7 @@
                     token_inserito: token 
                 });
 
-                showStatus("✅", "Ottimo Chef! Email verificata con successo. Ora puoi accedere.", "text-green-400");
-                btnTorna.classList.remove('hidden');
+                showStatus("✅", "Ottimo Chef! Email verificata con successo. Ora puoi accedere sul PC.", "text-green-400");
                 document.getElementById('footer-links').classList.add('hidden');
 
             } catch (error) {
