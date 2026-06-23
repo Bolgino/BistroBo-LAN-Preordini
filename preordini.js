@@ -640,6 +640,7 @@ async function getProssimoNumero(lettera) {
 // ========== 3️⃣ PARTE CLIENTI (pagina preordina.html) ============
 // ================================================================
 let totale = 0;
+let menuItems = {};
 async function initPreordiniClienti() {
     // 🔹 Controllo impostazioni preordini
     const snapImpostazioni = await db.ref("impostazioni/preordiniAbilitati").once("value");
@@ -669,7 +670,6 @@ async function initPreordiniClienti() {
   if (!menuDiv) return;
 
   totale = 0;
-  let menuItems = {};
 
   // 🔹 Applica tema dal DB prima di mostrare tutto
   applicaTemaDaDatabase();
@@ -725,41 +725,40 @@ async function initPreordiniClienti() {
             }
             const esaurito = piattoBloccato || ingredientiEsauriti;
 
+            // Crea il contenitore principale
             const riga = document.createElement("div");
             riga.className = "menu-item";
             if (esaurito) riga.classList.add("esaurito");
-            riga.innerHTML = `
-                <div class="menu-item-top" style="display:flex; justify-content:space-between; align-items:center; gap:10px;">
-                    <select data-id="${id}" data-prezzo="${item.prezzo}" ${esaurito ? "disabled" : ""}>
-
-                        ${Array.from({length:21}, (_,i)=>`<option value="${i}">${i}</option>`).join("")}
-                    </select>
-                    <span class="piatto-nome" style="flex:1;">${item.nome}</span>
-                    <span class="piatto-prezzo">
-                        ${
-                            item.sconto && item.sconto.tipo === "percentuale"
-                            ? `<span style="text-decoration: line-through; color:#888;">€${item.prezzo.toFixed(2)}</span>
-                            <br>
-                            <span style="font-weight:bold; color:#d9534f;">
-                                    €${(item.prezzo * (1 - item.sconto.valore/100)).toFixed(2)}
-                            </span>`
-                            : `€${item.prezzo.toFixed(2)}`
-                        }
-                    </span>
-                    ${esaurito ? `<span class="piatto-esaurito-label">❌ Non disponibile</span>` : ""}
-
-
-                </div>
-                ${item.sconto ? `<div class="piatto-sconto" style="color:#d9534f; font-weight:bold; font-size:0.9em; margin-left:35px;">
-                    ${item.sconto.tipo === "percentuale" ? `${item.sconto.valore}% di sconto`
-                    : item.sconto.tipo === "x_paga_y" ? `Prendi ${item.sconto.valore.x} Paga ${item.sconto.valore.y}`
-                    : item.sconto.tipo === "x_paga_y_fisso" ? `Prendi ${item.sconto.valore.x} Paga €${item.sconto.valore.y.toFixed(2)}`
-                    : ""}
-                </div>` : ""}
-                ${item.ingredienti && item.ingredienti.length ? `<div class="piatto-ingredienti" style="margin-left:10px; font-size:0.85em; color:#555;">
-                    ${item.ingredienti.map(i => `${i.nome}${i.qtyPerUnit ? ` (${i.qtyPerUnit}${i.unita||""})`:""}`).join(", ")}
-                </div>` : ""}
+            
+            // 1. Parte superiore (Nome + Prezzo)
+            const topDiv = document.createElement("div");
+            topDiv.className = "menu-item-top";
+            topDiv.style.display = "flex";
+            topDiv.style.justifyContent = "space-between";
+            topDiv.innerHTML = `
+                <span class="piatto-nome" style="flex:1; font-weight:bold;">${item.nome}</span>
+                <span class="piatto-prezzo">€${item.prezzo.toFixed(2)}</span>
             `;
+            
+            // 2. Ingredienti (sotto)
+            let ingDiv = "";
+            if (item.ingredienti && item.ingredienti.length) {
+                ingDiv = `<div class="piatto-ingredienti" style="font-size:0.85em; color:#555; margin: 5px 0;">
+                            ${item.ingredienti.map(i => i.nome).join(", ")}
+                          </div>`;
+            }
+            
+            // 3. Bottone (SOTTO gli ingredienti)
+            const btnHtml = `
+                <button style="margin-top: 10px; width: 100%; padding: 8px; border-radius: 8px; border: 1.5px solid ${esaurito ? '#ccc' : '#4CAF50'}; background: transparent; color: ${esaurito ? '#aaa' : '#4CAF50'}; cursor: ${esaurito ? 'not-allowed' : 'pointer'};" 
+                    onclick="apriPopupPersonalizzaCliente('${id}')" ${esaurito ? "disabled" : ""}>
+                    ${esaurito ? "Esaurito" : "+ Aggiungi all'ordine"}
+                </button>`;
+            
+            riga.innerHTML = ""; // Puliamo
+            riga.appendChild(topDiv);
+            riga.insertAdjacentHTML('beforeend', ingDiv);
+            riga.insertAdjacentHTML('beforeend', btnHtml);
             menuDiv.appendChild(riga);
         });
 
@@ -809,18 +808,62 @@ async function initPreordiniClienti() {
     }
 
   function aggiornaRiepilogoCarrelloUI() {
-    let nuovoTotale = 0;
+        let nuovoTotale = 0;
+        const listaCarrello = document.getElementById("listaCarrello");
+        const carrelloContainer = document.getElementById("carrelloContainer");
+        
+        if (listaCarrello) listaCarrello.innerHTML = "";
+        
+        // Mostra o Nasconde magicamente il box del carrello se ci sono prodotti
+        if (carrelloContainer) {
+            carrelloContainer.style.display = carrelloCliente.length === 0 ? "none" : "block";
+        }
     
-    // Svuota o crea un div per far vedere i prodotti nel carrello se vuoi (opzionale ma consigliato)
+        carrelloCliente.forEach((item, index) => {
+            const costoRiga = item.prezzo + item.extraPrezzo;
+            nuovoTotale += costoRiga;
+            
+            if (listaCarrello) {
+                const divRiga = document.createElement("div");
+                divRiga.style.padding = "10px 0";
+                divRiga.style.borderBottom = "1px dashed #eee";
+                divRiga.style.display = "flex";
+                divRiga.style.justifyContent = "space-between";
+                divRiga.style.alignItems = "center";
+                
+                // Creiamo il testo delle varianti (es: "+ Bacon \n - Senza Cipolla")
+                let htmlVarianti = "";
+                if (item.varianti && item.varianti.length > 0) {
+                    htmlVarianti = `<div style="font-size: 0.8em; color: #777; margin-top: 4px;">
+                        ${item.varianti.map(v => v.tipo === "aggiunta" ? `+ ${v.nome}` : `- Senza ${v.nome}`).join("<br>")}
+                    </div>`;
+                }
     
-    carrelloCliente.forEach(item => {
-        nuovoTotale += item.prezzo + item.extraPrezzo;
-    });
-
-    totale = Number(nuovoTotale.toFixed(2));
-    const totaleSpan = document.getElementById("totaleCliente");
-    if (totaleSpan) totaleSpan.innerText = totale.toFixed(2);
-}
+                // Disegniamo la riga del carrello con il tastino per cancellare
+                divRiga.innerHTML = `
+                    <div style="flex: 1; text-align: left;">
+                        <b style="color: #333; font-size: 1.1em;">${item.nome}</b>
+                        ${htmlVarianti}
+                    </div>
+                    <div style="font-weight: bold; margin-right: 15px; font-size: 1.1em; color: #4CAF50;">
+                        €${costoRiga.toFixed(2)}
+                    </div>
+                    <button onclick="rimuoviDalCarrello(${index})" style="background: #fff; color: #ff5252; border: 1px solid #ff5252; border-radius: 8px; padding: 6px 12px; cursor: pointer; font-size: 0.9em; font-weight: bold; transition: 0.2s;">Rimuovi</button>
+                `;
+                listaCarrello.appendChild(divRiga);
+            }
+        });
+    
+        totale = Number(nuovoTotale.toFixed(2));
+        const totaleSpan = document.getElementById("totaleCliente");
+        if (totaleSpan) totaleSpan.innerText = totale.toFixed(2);
+    }
+    
+    // Permette al cliente di cancellare un piatto se ci ha ripensato
+    function rimuoviDalCarrello(index) {
+        carrelloCliente.splice(index, 1);
+        aggiornaRiepilogoCarrelloUI();
+    }
     // Listener combinato ingredienti + bloccato
     // Listener combinato ingredienti + bloccato
     function aggiornaDisponibilitaPiatti(menuData, ingredientiDB) {
@@ -1426,4 +1469,65 @@ function calcolaPrezzoConScontoPerPiattoSingolo(piatto) {
         p = p * (1 - (Number(piatto.sconto.valore) || 0) / 100);
     }
     return p;
+}
+// ==========================================
+// FUNZIONI DEL CARRELLO VISIVO (CLIENTE)
+// ==========================================
+
+function aggiornaRiepilogoCarrelloUI() {
+    let nuovoTotale = 0;
+    const listaCarrello = document.getElementById("listaCarrello");
+    const carrelloContainer = document.getElementById("carrelloContainer");
+    
+    if (listaCarrello) listaCarrello.innerHTML = "";
+    
+    // Mostra o Nasconde magicamente il box del carrello se ci sono prodotti
+    if (carrelloContainer) {
+        carrelloContainer.style.display = carrelloCliente.length === 0 ? "none" : "block";
+    }
+
+    carrelloCliente.forEach((item, index) => {
+        const costoRiga = item.prezzo + item.extraPrezzo;
+        nuovoTotale += costoRiga;
+        
+        if (listaCarrello) {
+            const divRiga = document.createElement("div");
+            divRiga.style.padding = "10px 0";
+            divRiga.style.borderBottom = "1px dashed #eee";
+            divRiga.style.display = "flex";
+            divRiga.style.justifyContent = "space-between";
+            divRiga.style.alignItems = "center";
+            
+            // Creiamo il testo delle varianti (es: "+ Bacon \n - Senza Cipolla")
+            let htmlVarianti = "";
+            if (item.varianti && item.varianti.length > 0) {
+                htmlVarianti = `<div style="font-size: 0.8em; color: #777; margin-top: 4px;">
+                    ${item.varianti.map(v => v.tipo === "aggiunta" ? `+ ${v.nome}` : `- Senza ${v.nome}`).join("<br>")}
+                </div>`;
+            }
+
+            // Disegniamo la riga del carrello con il tastino per cancellare
+            divRiga.innerHTML = `
+                <div style="flex: 1; text-align: left;">
+                    <b style="color: #333; font-size: 1.1em;">${item.nome}</b>
+                    ${htmlVarianti}
+                </div>
+                <div style="font-weight: bold; margin-right: 15px; font-size: 1.1em; color: #4CAF50;">
+                    €${costoRiga.toFixed(2)}
+                </div>
+                <button onclick="rimuoviDalCarrello(${index})" style="background: #fff; color: #ff5252; border: 1px solid #ff5252; border-radius: 8px; padding: 6px 12px; cursor: pointer; font-size: 0.9em; font-weight: bold; transition: 0.2s;">Rimuovi</button>
+            `;
+            listaCarrello.appendChild(divRiga);
+        }
+    });
+
+    totale = Number(nuovoTotale.toFixed(2));
+    const totaleSpan = document.getElementById("totaleCliente");
+    if (totaleSpan) totaleSpan.innerText = totale.toFixed(2);
+}
+
+// Permette al cliente di cancellare un piatto se ci ha ripensato
+function rimuoviDalCarrello(index) {
+    carrelloCliente.splice(index, 1);
+    aggiornaRiepilogoCarrelloUI();
 }
