@@ -598,38 +598,22 @@ async function aggiungiPreordineAlleComande(id) {
     localStorage.setItem("comandeNotificate", JSON.stringify([...window.comandeNotificate]));
 
    // 🔹 Stampa automatica comanda se abilitata
-        // 🔹 Stampa automatica comanda se abilitata
-        if (window.settings.stampaAutomaticaComande) {
-            const datiDellaStampa = {
-                nome: p.nome,
-                telefono: p.telefono,
-                posizione: p.posizione,
-                nomeStand: window.settings.nomeStand,
-                restoRichiesto: p.restoRichiesto
-            };
-            stampaComanda([...piattiCucina, ...piattiBere, ...piattiSnack], numeroComandaFinale, p.note || "", datiDellaStampa);
-        }
-            
-        if (window.settings.scontriniSeparati) {
-            // Stampa separata per reparto (solo se ci sono piatti per quel reparto)
-            if (piattiCucina.length > 0) {
-                stampaComanda(piattiCucina, numeroComandaFinale + " - CUCINA", p.note || "", datiDellaStampa);
-            }
-            if (piattiBere.length > 0) {
-                stampaComanda(piattiBere, numeroComandaFinale + " - BERE", p.note || "", datiDellaStampa);
-            }
-            if (piattiSnack.length > 0) {
-                stampaComanda(piattiSnack, numeroComandaFinale + " - SNACK", p.note || "", datiDellaStampa);
-            }
-        } else {
-            // Logica originale: scontrino unico con tutti i piatti uniti
-            stampaComanda([...piattiCucina, ...piattiBere, ...piattiSnack], numeroComandaFinale, p.note || "", datiDellaStampa);
-        }
+    if (window.settings.stampaAutomaticaComande) {
+        const datiDellaStampa = {
+            nome: p.nome,
+            telefono: p.telefono,
+            posizione: p.posizione,
+            nomeStand: window.settings.nomeStand,
+            restoRichiesto: p.restoRichiesto
+        };
+        
+        // Chiamiamo stampaComanda UNA SOLA VOLTA passando tutti i piatti insieme.
+        // Sarà lei al suo interno a dividere le pagine del PDF se window.settings.scontriniSeparati è ON!
+        stampaComanda([...piattiCucina, ...piattiBere, ...piattiSnack], numeroComandaFinale, p.note || "", datiDellaStampa);
     }
 
     // 🔟 Conferma visiva
     notifypreordini(`✅ Preordine ${numeroComandaFinale} aggiunto come comanda!`, "info");
-
 }
 async function eliminaPreordine(id) {
   await preordiniRef.child(id).remove();
