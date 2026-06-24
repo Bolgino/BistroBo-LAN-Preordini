@@ -564,9 +564,9 @@ async function aggiungiPreordineAlleComande(id) {
     const nuovaComanda = {
         numero: numeroComandaFinale,
         piatti: [
-            ...piattiCucina.map(pi => ({ ...pi, destinazione: "cucina" })),
-            ...piattiBere.map(pi => ({ ...pi, destinazione: "bere" })),
-            ...piattiSnack.map(pi => ({ ...pi, destinazione: "snack" }))
+            ...piattiCucina.map(pi => ({ ...pi, destinazione: "cucina", maxVariantiGratis: pi.maxVariantiGratis || 0 })),
+            ...piattiBere.map(pi => ({ ...pi, destinazione: "bere", maxVariantiGratis: pi.maxVariantiGratis || 0 })),
+            ...piattiSnack.map(pi => ({ ...pi, destinazione: "snack", maxVariantiGratis: pi.maxVariantiGratis || 0 }))
         ],
         statoCucina,
         statoBere,
@@ -1517,11 +1517,12 @@ function renderVariantiCliente(piatto, maxGratis) {
             categoria: piatto.categoria,
             varianti: JSON.parse(JSON.stringify(tempVariantiCliente)),
             extraPrezzo: totaleExtra,
-            quantita: 1 
+            quantita: 1,
+            maxVariantiGratis: maxGratis || 0 // 🔹 QUESTO EVITA IL CRASH FIREBASE
         });
         
         chiudiPopupPersonalizza();
-        aggiornaRiepilogoCarrelloUI(); 
+        aggiornaRiepilogoCarrelloUI();  
     };
 }
 // Calcola lo sconto per la singola unità
@@ -1554,11 +1555,13 @@ function aggiornaRiepilogoCarrelloUI() {
         
         if (listaCarrello) {
             const divRiga = document.createElement("div");
+            // Stili del contenitore della riga: aggiungiamo "gap" per distanziare gli elementi
             divRiga.style.padding = "10px 0";
             divRiga.style.borderBottom = "1px dashed #eee";
             divRiga.style.display = "flex";
             divRiga.style.justifyContent = "space-between";
             divRiga.style.alignItems = "center";
+            divRiga.style.gap = "15px"; // 🔹 SPAZIO MAGICO AGGIUNTO
             
             // Creiamo il testo delle varianti RAGGRUPPATO
             let htmlVarianti = "";
@@ -1579,16 +1582,16 @@ function aggiornaRiepilogoCarrelloUI() {
                 htmlVarianti = `<div style="font-size: 0.8em; color: #777; margin-top: 4px;">${variantiTxt}</div>`;
             }
 
-            // Disegniamo la riga del carrello con il tastino per cancellare
+            // Disegniamo la riga del carrello: bloccando il prezzo e il bottone per non andare a capo male
             divRiga.innerHTML = `
-                <div style="flex: 1; text-align: left;">
+                <div style="flex: 1; text-align: left; padding-right: 10px;">
                     <b style="color: #333; font-size: 1.1em;">${item.nome}</b>
                     ${htmlVarianti}
                 </div>
-                <div style="font-weight: bold; margin-right: 15px; font-size: 1.1em; color: #4CAF50;">
+                <div style="font-weight: bold; font-size: 1.1em; color: #4CAF50; white-space: nowrap;">
                     €${costoRiga.toFixed(2)}
                 </div>
-                <button onclick="rimuoviDalCarrello(${index})" style="background: #fff; color: #ff5252; border: 1px solid #ff5252; border-radius: 8px; padding: 6px 12px; cursor: pointer; font-size: 0.9em; font-weight: bold; transition: 0.2s;">Rimuovi</button>
+                <button onclick="rimuoviDalCarrello(${index})" style="background: #fff; color: #ff5252; border: 1px solid #ff5252; border-radius: 8px; padding: 6px 12px; cursor: pointer; font-size: 0.9em; font-weight: bold; transition: 0.2s; white-space: nowrap;">Rimuovi</button>
             `;
             listaCarrello.appendChild(divRiga);
         }
@@ -1598,7 +1601,20 @@ function aggiornaRiepilogoCarrelloUI() {
     const totaleSpan = document.getElementById("totaleCliente");
     if (totaleSpan) totaleSpan.innerText = totale.toFixed(2);
 }
+document.addEventListener('DOMContentLoaded', () => {
+    const standDisplay = document.getElementById('nome-stand-display');
 
+    firebase.database().ref('impostazioni/nomeStand').once('value')
+        .then((snapshot) => {
+            const nomeStand = snapshot.val();
+            if (nomeStand && standDisplay) {
+                standDisplay.textContent = nomeStand;
+            }
+        })
+        .catch((error) => {
+            console.error("Errore nel recupero del nome stand:", error);
+        });
+});
 // Permette al cliente di cancellare un piatto se ci ha ripensato
 function rimuoviDalCarrello(index) {
     carrelloCliente.splice(index, 1);
