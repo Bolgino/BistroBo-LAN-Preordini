@@ -597,18 +597,34 @@ async function aggiungiPreordineAlleComande(id) {
     window.comandeNotificate.delete(id);
     localStorage.setItem("comandeNotificate", JSON.stringify([...window.comandeNotificate]));
 
-    // 🔹 Stampa automatica comanda se abilitata
-    if (window.settings.stampaAutomaticaComande) {
-        stampaComanda([...piattiCucina, ...piattiBere, ...piattiSnack], numeroComandaFinale, p.note || "", {
-            nome: p.nome,
-            telefono: p.telefono,
-            posizione: p.posizione,
-            nomeStand: window.settings.nomeStand,
-            restoRichiesto: p.restoRichiesto
-        });
-
-
-
+   // 🔹 Stampa automatica comanda se abilitata
+        // 🔹 Stampa automatica comanda se abilitata
+        if (window.settings.stampaAutomaticaComande) {
+            const datiDellaStampa = {
+                nome: p.nome,
+                telefono: p.telefono,
+                posizione: p.posizione,
+                nomeStand: window.settings.nomeStand,
+                restoRichiesto: p.restoRichiesto
+            };
+            stampaComanda([...piattiCucina, ...piattiBere, ...piattiSnack], numeroComandaFinale, p.note || "", datiDellaStampa);
+        }
+            
+        if (window.settings.scontriniSeparati) {
+            // Stampa separata per reparto (solo se ci sono piatti per quel reparto)
+            if (piattiCucina.length > 0) {
+                stampaComanda(piattiCucina, numeroComandaFinale + " - CUCINA", p.note || "", datiDellaStampa);
+            }
+            if (piattiBere.length > 0) {
+                stampaComanda(piattiBere, numeroComandaFinale + " - BERE", p.note || "", datiDellaStampa);
+            }
+            if (piattiSnack.length > 0) {
+                stampaComanda(piattiSnack, numeroComandaFinale + " - SNACK", p.note || "", datiDellaStampa);
+            }
+        } else {
+            // Logica originale: scontrino unico con tutti i piatti uniti
+            stampaComanda([...piattiCucina, ...piattiBere, ...piattiSnack], numeroComandaFinale, p.note || "", datiDellaStampa);
+        }
     }
 
     // 🔟 Conferma visiva
@@ -636,6 +652,27 @@ async function getProssimoNumero(lettera) {
 
     return maxNum + 1; // ritorna il prossimo numero disponibile
 }
+window.aggiungiVeloceCarrello = function(id) {
+    const piatto = menuItems[id];
+    if (!piatto) return;
+    
+    const prezzoBaseScontato = calcolaPrezzoConScontoPerPiattoSingolo(piatto); 
+    
+    carrelloCliente.push({
+        id: id,
+        nome: piatto.nome,
+        prezzo: prezzoBaseScontato, 
+        categoria: piatto.categoria,
+        varianti: [], // Nessuna variante concessa!
+        extraPrezzo: 0,
+        quantita: 1,
+        maxVariantiGratis: piatto.maxVariantiGratis || 0
+    });
+    
+    if (typeof aggiornaRiepilogoCarrelloUI === "function") {
+        aggiornaRiepilogoCarrelloUI();
+    }
+};
 // ================================================================
 // ========== 3️⃣ PARTE CLIENTI (pagina preordina.html) ============
 // ================================================================
@@ -770,10 +807,12 @@ async function initPreordiniClienti() {
                 </div>`;
             }
             
-            // 3. Bottone (SOTTO gli ingredienti come richiesto)
+            // 3. Bottone dinamico
+            const clickAction = window.settings.sistemaExtraAbilitato ? `apriPopupPersonalizzaCliente('${id}')` : `aggiungiVeloceCarrello('${id}')`;
+            
             const btnHtml = `
                 <button style="width: 100%; padding: 8px; border-radius: 8px; border: 1.5px solid ${esaurito ? '#ccc' : '#4CAF50'}; background: transparent; color: ${esaurito ? '#aaa' : '#4CAF50'}; cursor: ${esaurito ? 'not-allowed' : 'pointer'}; font-weight: bold;" 
-                    onclick="apriPopupPersonalizzaCliente('${id}')" ${esaurito ? "disabled" : ""}>
+                    onclick="${clickAction}" ${esaurito ? "disabled" : ""}>
                     ${esaurito ? "❌ Esaurito" : "+ Aggiungi all'ordine"}
                 </button>`;
             
@@ -1415,7 +1454,8 @@ function renderVariantiCliente(piatto, maxGratis) {
         const catPiatto = (piatto.categoria || "cibi").toLowerCase();
         
         const isBase = baseIds.includes(ingId);
-        const isExtraValido = (ing.usabileComeExtra === true) && catsApp.includes(catPiatto);
+        // Modifica questa riga:
+        const isExtraValido = window.settings.sistemaExtraAbilitato && (ing.usabileComeExtra === true) && catsApp.includes(catPiatto);
 
         // Se non è base e non è extra valido per questa categoria, salta
         if (!isBase && !isExtraValido) return;
