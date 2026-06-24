@@ -235,6 +235,11 @@ async function renderPreordiniAdmin(data) {
                                 Ingredienti: ${pi.ingredienti.map(i => `${i.nome}${i.qtyPerUnit ? ` (${i.qtyPerUnit}${i.unita || ""})` : ""}`).join(", ")}
                             </div>`
                             : ""}
+                        ${pi.contorniScelti && pi.contorniScelti.length 
+                            ? `<div style="font-size:0.85em; color:#d9534f; font-weight:bold; margin-top:3px;">
+                                Contorni: ${pi.contorniScelti.map(c => c.nome).join(" + ")}
+                               </div>`
+                            : ""}
                     </div>
                 `).join("")}
                 ${piattiBere.map(pi => `
@@ -245,6 +250,11 @@ async function renderPreordiniAdmin(data) {
                                 Ingredienti: ${pi.ingredienti.map(i => `${i.nome}${i.qtyPerUnit ? ` (${i.qtyPerUnit}${i.unita || ""})` : ""}`).join(", ")}
                             </div>`
                             : ""}
+                        ${pi.contorniScelti && pi.contorniScelti.length 
+                            ? `<div style="font-size:0.85em; color:#d9534f; font-weight:bold; margin-top:3px;">
+                                Contorni: ${pi.contorniScelti.map(c => c.nome).join(" + ")}
+                               </div>`
+                            : ""}
                     </div>
                 `).join("")}
                 ${piattiSnack.map(pi => `
@@ -254,6 +264,11 @@ async function renderPreordiniAdmin(data) {
                             ? `<div style="font-size:0.75em; color:#555;">
                                 Ingredienti: ${pi.ingredienti.map(i => `${i.nome}${i.qtyPerUnit ? ` (${i.qtyPerUnit}${i.unita || ""})` : ""}`).join(", ")}
                             </div>`
+                            : ""}
+                        ${pi.contorniScelti && pi.contorniScelti.length 
+                            ? `<div style="font-size:0.85em; color:#d9534f; font-weight:bold; margin-top:3px;">
+                                Contorni: ${pi.contorniScelti.map(c => c.nome).join(" + ")}
+                               </div>`
                             : ""}
                     </div>
                 `).join("")}
@@ -427,7 +442,13 @@ function renderPreordiniCassa(data) {
                         ${pi.ingredienti && pi.ingredienti.length
                             ? `<div style="font-size:0.75em; color:#555;">
                                 Ingredienti: ${pi.ingredienti.map(i => `${i.nome}${i.qtyPerUnit ? ` (${i.qtyPerUnit}${i.unita || ""})` : ""}`).join(", ")}
-                            </div>` : ""}
+                            </div>`
+                            : ""}
+                        ${pi.contorniScelti && pi.contorniScelti.length 
+                            ? `<div style="font-size:0.85em; color:#d9534f; font-weight:bold; margin-top:3px;">
+                                Contorni: ${pi.contorniScelti.map(c => c.nome).join(" + ")}
+                               </div>`
+                            : ""}
                     </div>
                 `).join("")}
                 ${piattiBere.map(pi => `
@@ -436,7 +457,13 @@ function renderPreordiniCassa(data) {
                         ${pi.ingredienti && pi.ingredienti.length
                             ? `<div style="font-size:0.75em; color:#555;">
                                 Ingredienti: ${pi.ingredienti.map(i => `${i.nome}${i.qtyPerUnit ? ` (${i.qtyPerUnit}${i.unita || ""})` : ""}`).join(", ")}
-                            </div>` : ""}
+                            </div>`
+                            : ""}
+                        ${pi.contorniScelti && pi.contorniScelti.length 
+                            ? `<div style="font-size:0.85em; color:#d9534f; font-weight:bold; margin-top:3px;">
+                                Contorni: ${pi.contorniScelti.map(c => c.nome).join(" + ")}
+                               </div>`
+                            : ""}
                     </div>
                 `).join("")}
                 ${piattiSnack.map(pi => `
@@ -445,7 +472,13 @@ function renderPreordiniCassa(data) {
                         ${pi.ingredienti && pi.ingredienti.length
                             ? `<div style="font-size:0.75em; color:#555;">
                                 Ingredienti: ${pi.ingredienti.map(i => `${i.nome}${i.qtyPerUnit ? ` (${i.qtyPerUnit}${i.unita || ""})` : ""}`).join(", ")}
-                            </div>` : ""}
+                            </div>`
+                            : ""}
+                        ${pi.contorniScelti && pi.contorniScelti.length 
+                            ? `<div style="font-size:0.85em; color:#d9534f; font-weight:bold; margin-top:3px;">
+                                Contorni: ${pi.contorniScelti.map(c => c.nome).join(" + ")}
+                               </div>`
+                            : ""}
                     </div>
                 `).join("")}
                 ${p.note ? `
@@ -796,8 +829,15 @@ async function initPreordiniClienti() {
                 </div>`;
             }
             
-            // 3. Bottone dinamico con ID univoco e transizione
-            const clickAction = window.settings.sistemaExtraAbilitato ? `apriPopupPersonalizzaCliente('${id}')` : `aggiungiVeloceCarrello('${id}')`;
+            // 3. Bottone dinamico Intelligente
+            let clickAction = "";
+            if (window.settings.piattiComboAbilitati && item.isCombo) {
+                clickAction = `apriPopupCombo('${id}', 'preordine')`;
+            } else if (window.settings.sistemaExtraAbilitato) {
+                clickAction = `apriPopupPersonalizzaCliente('${id}')`;
+            } else {
+                clickAction = `aggiungiVeloceCarrello('${id}')`;
+            }
             
             const btnHtml = `
                 <button id="btn-add-${id}" style="width: 100%; padding: 8px; border-radius: 8px; border: 1.5px solid ${esaurito ? '#ccc' : '#4CAF50'}; background: transparent; color: ${esaurito ? '#aaa' : '#4CAF50'}; cursor: ${esaurito ? 'not-allowed' : 'pointer'}; font-weight: bold; transition: all 0.3s ease;" 
@@ -1536,6 +1576,24 @@ function aggiornaRiepilogoCarrelloUI() {
                 htmlVarianti = `<div style="font-size: 0.8em; color: #777; margin-top: 4px;">${variantiTxt}</div>`;
             }
 
+            // NUOVO: RAGGRUPPAMENTO CONTORNI COMBO
+            if (item.contorniScelti && item.contorniScelti.length > 0) {
+                const cTxt = item.contorniScelti.map(c => {
+                    return c.isGratis ? `<span style="color:#2e7d32; font-weight:bold;">=> ${c.nome}</span>` : `<span style="color:#d9534f;">=> ${c.nome} (+€${c.prezzoPagato.toFixed(2)})</span>`;
+                }).join("<br>");
+                htmlVarianti += `<div style="font-size: 0.85em; margin-top: 4px;">${cTxt}</div>`;
+            }
+
+            // Disegniamo la riga del carrello: bloccando il prezzo e il bottone per non andare a capo male
+            divRiga.innerHTML = `
+                    let qTxt = v.count > 1 ? `${v.count}x ` : "";
+                    if (v.tipo === "aggiunta") return `<span style="color:green;">+ ${qTxt}${v.nome}</span>`;
+                    else return `<span style="color:red;">- Senza ${v.nome}</span>`;
+                }).join("<br>");
+
+                htmlVarianti = `<div style="font-size: 0.8em; color: #777; margin-top: 4px;">${variantiTxt}</div>`;
+            }
+
             // Disegniamo la riga del carrello: bloccando il prezzo e il bottone per non andare a capo male
             divRiga.innerHTML = `
                 <div style="flex: 1; text-align: left; padding-right: 10px;">
@@ -1590,3 +1648,21 @@ function rimuoviDalCarrello(index) {
     carrelloCliente.splice(index, 1);
     aggiornaRiepilogoCarrelloUI();
 }
+window.aggiungiComboCarrelloCliente = function(piattoCombo, contorniDaSalvare, extraComboCalcolato) {
+    const prezzoBaseScontato = calcolaPrezzoConScontoPerPiattoSingolo(piattoCombo); 
+    
+    carrelloCliente.push({
+        id: piattoCombo.id,
+        nome: piattoCombo.nome,
+        prezzo: prezzoBaseScontato, 
+        categoria: piattoCombo.categoria,
+        varianti: [], 
+        extraPrezzo: extraComboCalcolato, 
+        quantita: 1,
+        contorniScelti: contorniDaSalvare
+    });
+    
+    if (typeof aggiornaRiepilogoCarrelloUI === "function") {
+        aggiornaRiepilogoCarrelloUI();
+    }
+};
