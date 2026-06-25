@@ -1857,7 +1857,7 @@ window.aggiungiComboCarrelloCliente = function(piattoCombo, idCombo, contorniDaS
         nome: piattoCombo.nome,
         prezzo: piattoCombo.prezzo, 
         categoria: piattoCombo.categoria,
-        ingredienti: piattoCombo.ingredienti || [],
+        ingredienti: piattoCombo.ingredienti ? JSON.parse(JSON.stringify(piattoCombo.ingredienti)) : [],
         varianti: [], 
         extraPrezzo: extraComboCalcolato, 
         quantita: 1,
