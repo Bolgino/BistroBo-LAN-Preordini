@@ -1709,17 +1709,19 @@ window.apriPopupVariantiContornoCliente = function(idxCarrello, idxContorno) {
             const catPiatto = (piattoOriginale.categoria || "cibi").toLowerCase();
             const isBase = baseIds.includes(ingId);
             const isExtraFlag = (ing.usabileComeExtra === true) && catsApp.includes(catPiatto);
-    
+
             let allowRemove = false;
             let allowAdd = false;
-    
+
             if (window.settings.sistemaExtraAbilitato) {
                 if (isBase) allowRemove = true;
                 if (isExtraFlag) allowAdd = true;
             } else {
+                // EXTRA OFF: Tasto togli visibile SOLO se l'ingrediente fa parte del piatto (isBase) 
+                // E se l'ingrediente è configurato come extra (isExtraFlag). Niente aggiunte.
                 if (isBase && isExtraFlag) allowRemove = true;
             }
-    
+
             if (!allowRemove && !allowAdd) return;
 
             const row = document.createElement("div");
@@ -1733,7 +1735,7 @@ window.apriPopupVariantiContornoCliente = function(idxCarrello, idxContorno) {
             const btnContainer = document.createElement("div");
             btnContainer.style.display = "flex"; btnContainer.style.alignItems = "center";
 
-            if (isBase) {
+            if (allowRemove) {
                 const isRimosso = tempVariantiCliente.some(v => v.tipo === "rimozione" && v.id === ingId);
                 const btnRemove = document.createElement("button");
                 btnRemove.innerText = isRimosso ? "Annulla" : "- Togli";
@@ -1741,12 +1743,12 @@ window.apriPopupVariantiContornoCliente = function(idxCarrello, idxContorno) {
                 btnRemove.onclick = () => {
                     if (isRimosso) tempVariantiCliente = tempVariantiCliente.filter(v => !(v.tipo === "rimozione" && v.id === ingId));
                     else tempVariantiCliente.push({ tipo: "rimozione", id: ingId, nome: ing.nome });
-                    renderVariantiContorno();
+                    renderVariantiCliente();
                 };
                 btnContainer.appendChild(btnRemove);
             }
 
-            if (isExtraValido) {
+            if (allowAdd) {
                 const costoExtra = ing.prezzoExtra !== undefined ? Number(ing.prezzoExtra) : 0.50;
                 const occorrenze = tempVariantiCliente.filter(v => v.tipo === "aggiunta" && v.id === ingId).length;
                 const wrapperAdd = document.createElement("div"); wrapperAdd.style.cssText = "display:inline-flex; align-items:center; margin-left:5px;";
@@ -1756,18 +1758,18 @@ window.apriPopupVariantiContornoCliente = function(idxCarrello, idxContorno) {
                     btnMinus.onclick = () => {
                         const rIndex = [...tempVariantiCliente].reverse().findIndex(v => v.tipo === "aggiunta" && v.id === ingId);
                         if (rIndex !== -1) tempVariantiCliente.splice(tempVariantiCliente.length - 1 - rIndex, 1);
-                        renderVariantiContorno();
+                        renderVariantiCliente();
                     };
                     const spanCount = document.createElement("span"); spanCount.innerText = occorrenze; spanCount.style.cssText = "margin:0 8px; font-weight:bold;";
                     const btnPlus = document.createElement("button"); btnPlus.innerText = "+"; btnPlus.style.cssText = "background:#4CAF50; color:white; padding:4px 10px; border-radius:5px; border:none;";
-                    btnPlus.onclick = () => { tempVariantiCliente.push({ tipo: "aggiunta", id: ingId, nome: ing.nome, qty: 1, prezzo: costoExtra }); renderVariantiContorno(); };
+                    btnPlus.onclick = () => { tempVariantiCliente.push({ tipo: "aggiunta", id: ingId, nome: ing.nome, qty: 1, prezzo: costoExtra }); renderVariantiCliente(); };
 
                     wrapperAdd.appendChild(btnMinus); wrapperAdd.appendChild(spanCount); wrapperAdd.appendChild(btnPlus);
                 } else {
                     const btnAdd = document.createElement("button");
                     btnAdd.innerText = isProssimaGratis ? `+ Gratis` : `+ €${costoExtra.toFixed(2)}`;
                     btnAdd.style.cssText = "background:#4CAF50; color:white; padding:5px 10px; border-radius:5px; border:none;";
-                    btnAdd.onclick = () => { tempVariantiCliente.push({ tipo: "aggiunta", id: ingId, nome: ing.nome, qty: 1, prezzo: costoExtra }); renderVariantiContorno(); };
+                    btnAdd.onclick = () => { tempVariantiCliente.push({ tipo: "aggiunta", id: ingId, nome: ing.nome, qty: 1, prezzo: costoExtra }); renderVariantiCliente(); };
                     wrapperAdd.appendChild(btnAdd);
                 }
                 btnContainer.appendChild(wrapperAdd);
