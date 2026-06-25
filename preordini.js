@@ -1860,3 +1860,146 @@ function rimuoviDalCarrello(index) {
     aggiornaRiepilogoCarrelloUI();
 }    
 
+// ==========================================
+// FUNZIONI COMBO / CONTORNI (CLIENTE)
+// ==========================================
+
+// 1. Apre il modale per la scelta dei contorni
+window.apriPopupComboCliente = function(idCombo) {
+    const piattoCombo = menuItems[idCombo];
+    if (!piattoCombo) return;
+
+    // Trova tutti i contorni disponibili e non bloccati
+    const tuttiIContorni = Object.entries(menuItems)
+        .filter(([id, item]) => item.isContorno === true && !item.bloccato)
+        .map(([id, item]) => ({ id, ...item }));
+
+    if (tuttiIContorni.length === 0) {
+        // Fallback: se non ci sono contorni a menu, passa direttamente agli extra o aggiunge
+        if (window.settings.sistemaExtraAbilitato) {
+            apriPopupPersonalizzaCliente(idCombo);
+        } else {
+            aggiungiVeloceCarrello(idCombo);
+        }
+        return;
+    }
+
+    const numScelte = piattoCombo.numContorniScelta || 1;
+    let contorniSelezionati = [];
+
+    // Crea dinamicamente il popup HTML se non esiste
+    let popup = document.getElementById("popupComboClienteDinamico");
+    if (!popup) {
+        popup = document.createElement("div");
+        popup.id = "popupComboClienteDinamico";
+        popup.style.cssText = "display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); z-index:10000; justify-content:center; align-items:center;";
+        popup.innerHTML = `
+            <div style="background:#fff; width:90%; max-width:400px; border-radius:12px; padding:20px; box-shadow:0 5px 15px rgba(0,0,0,0.3); display:flex; flex-direction:column; max-height:90vh;">
+                <h3 id="titoloComboDinamico" style="margin-top:0; color:#333; font-size:1.2em; text-align:center;"></h3>
+                <p style="text-align:center; color:#666; font-size:0.9em; margin-bottom:15px;" id="sottotitoloComboDinamico"></p>
+                
+                <div id="listaContorniDinamico" style="flex:1; overflow-y:auto; margin-bottom:15px; border-top:1px solid #eee; border-bottom:1px solid #eee; padding:10px 0;"></div>
+                
+                <div style="display:flex; justify-content:space-between; gap:10px; margin-top:10px;">
+                    <button id="btnAnnullaComboDinamico" style="flex:1; padding:10px; border:none; border-radius:8px; background:#ccc; color:#333; font-weight:bold; cursor:pointer;">Annulla</button>
+                    <button id="btnConfermaComboDinamico" style="flex:1; padding:10px; border:none; border-radius:8px; background:#4CAF50; color:white; font-weight:bold; cursor:pointer;" disabled>Conferma</button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(popup);
+    }
+
+    document.getElementById("titoloComboDinamico").innerText = `Componi: ${piattoCombo.nome}`;
+    document.getElementById("sottotitoloComboDinamico").innerText = `Scegli ${numScelte} contorn${numScelte > 1 ? 'i' : 'o'}`;
+    
+    const listaDiv = document.getElementById("listaContorniDinamico");
+    listaDiv.innerHTML = "";
+    
+    const btnConferma = document.getElementById("btnConfermaComboDinamico");
+    btnConferma.disabled = true;
+
+    function aggiornaUI() {
+        btnConferma.disabled = contorniSelezionati.length !== numScelte;
+        document.querySelectorAll(".combo-checkbox").forEach(chk => {
+            const idContorno = chk.dataset.id;
+            chk.checked = contorniSelezionati.some(c => c.id === idContorno);
+            chk.disabled = (contorniSelezionati.length >= numScelte && !chk.checked);
+        });
+    }
+
+    tuttiIContorni.forEach(contorno => {
+        const row = document.createElement("div");
+        row.style.cssText = "display:flex; justify-content:space-between; align-items:center; padding:10px; border-bottom:1px solid #f5f5f5; cursor:pointer;";
+        
+        const lbl = document.createElement("label");
+        lbl.style.cssText = "display:flex; align-items:center; gap:10px; width:100%; cursor:pointer; margin:0;";
+        
+        const chk = document.createElement("input");
+        chk.type = "checkbox";
+        chk.className = "combo-checkbox";
+        chk.dataset.id = contorno.id;
+        chk.style.transform = "scale(1.2)";
+        
+        chk.onchange = (e) => {
+            if (e.target.checked) {
+                if (contorniSelezionati.length < numScelte) {
+                    contorniSelezionati.push({
+                        id: contorno.id,
+                        nome: contorno.nome,
+                        prezzoOriginale: contorno.prezzo || 0,
+                        prezzoPagato: 0, // Nelle combo i contorni base sono inclusi nel prezzo (Gratis)
+                        extraPrezzo: 0,
+                        isGratis: true,
+                        varianti: []
+                    });
+                }
+            } else {
+                contorniSelezionati = contorniSelezionati.filter(c => c.id !== contorno.id);
+            }
+            aggiornaUI();
+        };
+        
+        const testoSp = document.createElement("span");
+        testoSp.innerText = contorno.nome;
+        testoSp.style.fontSize = "1.1em";
+        
+        lbl.appendChild(chk);
+        lbl.appendChild(testoSp);
+        row.appendChild(lbl);
+        listaDiv.appendChild(row);
+    });
+
+    // Mostra il modale
+    popup.style.display = "flex";
+
+    document.getElementById("btnAnnullaComboDinamico").onclick = () => {
+        popup.style.display = "none";
+    };
+
+    document.getElementById("btnConfermaComboDinamico").onclick = () => {
+        aggiungiComboCarrelloCliente(piattoCombo, idCombo, contorniSelezionati, 0);
+        popup.style.display = "none";
+        if(typeof mostraNotificaCentrale === "function") mostraNotificaCentrale("✅ Aggiunto al carrello!");
+    };
+};
+
+// 2. Salva il piatto e i contorni nel carrello (riscritto per includere correttamente gli sconti)
+window.aggiungiComboCarrelloCliente = function(piattoCombo, idCombo, contorniDaSalvare, extraComboCalcolato) {
+    // FIX: Calcoliamo subito il prezzo scontato come facciamo nell'aggiunta rapida
+    const prezzoBaseScontato = calcolaPrezzoConScontoPerPiattoSingolo(piattoCombo); 
+
+    carrelloCliente.push({
+        id: idCombo,
+        nome: piattoCombo.nome,
+        prezzo: prezzoBaseScontato, 
+        categoria: piattoCombo.categoria,
+        ingredienti: piattoCombo.ingredienti ? JSON.parse(JSON.stringify(piattoCombo.ingredienti)) : [],
+        varianti: [], // Le varianti all'Hamburger si aggiungeranno cliccando dal carrello
+        extraPrezzo: extraComboCalcolato, 
+        quantita: 1,
+        contorniScelti: contorniDaSalvare,
+        sconto: piattoCombo.sconto || null
+    });
+    
+    if (typeof aggiornaRiepilogoCarrelloUI === "function") aggiornaRiepilogoCarrelloUI();
+};
