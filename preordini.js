@@ -203,12 +203,27 @@ async function renderPreordiniAdmin(data) {
         const piattiBere = p.piatti?.filter(i => i.categoria === "bevande") || [];
         let piattiSnack = p.piatti?.filter(i => i.categoria === "snack") || [];
         if (!window.settings.snackAbilitato && piattiSnack.length > 0) {
-            // se snack disabilitato, li mostriamo insieme ai piatti cucina
             piattiCibo.push(...piattiSnack);
             piattiSnack = [];
         }
-        let totale = [...piattiCibo, ...piattiBere, ...piattiSnack].reduce((sum, pi) => sum + (Number(pi.prezzo || 0) * (pi.quantita || 0)), 0);
+        
+        function formattaPrezzoSingolo(pi) {
+            if (typeof calcolaPrezzoConSconto === "function") {
+                return (calcolaPrezzoConSconto(pi) / (pi.quantita || 1)).toFixed(2);
+            }
+            return (Number(pi.prezzo || 0) + Number(pi.extraPrezzo || 0)).toFixed(2);
+        }
+
+        let totale = 0;
+        [...piattiCibo, ...piattiBere, ...piattiSnack].forEach(pi => {
+            if (typeof calcolaPrezzoConSconto === "function") {
+                totale += calcolaPrezzoConSconto(pi);
+            } else {
+                totale += (Number(pi.prezzo || 0) + Number(pi.extraPrezzo || 0)) * (pi.quantita || 1);
+            }
+        });
         totale = Number(totale.toFixed(2));
+        
         div.innerHTML = `
         
             <div class="order-header">
@@ -229,7 +244,7 @@ async function renderPreordiniAdmin(data) {
             <div class="order-body">
                 ${piattiCibo.map(pi => `
                     <div>
-                        ${pi.quantita}× ${pi.nome} (€${pi.prezzo.toFixed(2)})
+                        ${pi.quantita}× ${pi.nome} (€${formattaPrezzoSingolo(pi)})
                         ${pi.ingredienti && pi.ingredienti.length
                             ? `<div style="font-size:0.75em; color:#555;">
                                 Ingredienti: ${pi.ingredienti.map(i => `${i.nome}${i.qtyPerUnit ? ` (${i.qtyPerUnit}${i.unita || ""})` : ""}`).join(", ")}
@@ -244,7 +259,7 @@ async function renderPreordiniAdmin(data) {
                 `).join("")}
                 ${piattiBere.map(pi => `
                     <div>
-                        ${pi.quantita}× ${pi.nome} (€${pi.prezzo.toFixed(2)})
+                        ${pi.quantita}× ${pi.nome} (€${formattaPrezzoSingolo(pi)})
                         ${pi.ingredienti && pi.ingredienti.length
                             ? `<div style="font-size:0.75em; color:#555;">
                                 Ingredienti: ${pi.ingredienti.map(i => `${i.nome}${i.qtyPerUnit ? ` (${i.qtyPerUnit}${i.unita || ""})` : ""}`).join(", ")}
@@ -259,7 +274,7 @@ async function renderPreordiniAdmin(data) {
                 `).join("")}
                 ${piattiSnack.map(pi => `
                     <div>
-                        ${pi.quantita}× ${pi.nome} (€${pi.prezzo.toFixed(2)})
+                        ${pi.quantita}× ${pi.nome} (€${formattaPrezzoSingolo(pi)})
                         ${pi.ingredienti && pi.ingredienti.length
                             ? `<div style="font-size:0.75em; color:#555;">
                                 Ingredienti: ${pi.ingredienti.map(i => `${i.nome}${i.qtyPerUnit ? ` (${i.qtyPerUnit}${i.unita || ""})` : ""}`).join(", ")}
@@ -438,7 +453,7 @@ function renderPreordiniCassa(data) {
             <div class="order-body">
                 ${piattiCibo.map(pi => `
                     <div>
-                        ${pi.quantita}× ${pi.nome} (€${pi.prezzo.toFixed(2)})
+                        ${pi.quantita}× ${pi.nome} (€${formattaPrezzoSingolo(pi)})
                         ${pi.ingredienti && pi.ingredienti.length
                             ? `<div style="font-size:0.75em; color:#555;">
                                 Ingredienti: ${pi.ingredienti.map(i => `${i.nome}${i.qtyPerUnit ? ` (${i.qtyPerUnit}${i.unita || ""})` : ""}`).join(", ")}
@@ -453,7 +468,7 @@ function renderPreordiniCassa(data) {
                 `).join("")}
                 ${piattiBere.map(pi => `
                     <div>
-                        ${pi.quantita}× ${pi.nome} (€${pi.prezzo.toFixed(2)})
+                        ${pi.quantita}× ${pi.nome} (€${formattaPrezzoSingolo(pi)})
                         ${pi.ingredienti && pi.ingredienti.length
                             ? `<div style="font-size:0.75em; color:#555;">
                                 Ingredienti: ${pi.ingredienti.map(i => `${i.nome}${i.qtyPerUnit ? ` (${i.qtyPerUnit}${i.unita || ""})` : ""}`).join(", ")}
@@ -468,7 +483,7 @@ function renderPreordiniCassa(data) {
                 `).join("")}
                 ${piattiSnack.map(pi => `
                     <div>
-                        ${pi.quantita}× ${pi.nome} (€${pi.prezzo.toFixed(2)})
+                        ${pi.quantita}× ${pi.nome} (€${formattaPrezzoSingolo(pi)})
                         ${pi.ingredienti && pi.ingredienti.length
                             ? `<div style="font-size:0.75em; color:#555;">
                                 Ingredienti: ${pi.ingredienti.map(i => `${i.nome}${i.qtyPerUnit ? ` (${i.qtyPerUnit}${i.unita || ""})` : ""}`).join(", ")}
@@ -1039,25 +1054,26 @@ db.ref("ingredienti").on("value", snapIng => {
 });
 
 
-  function calcolaPrezzoPreordine(piatto) { 
-    const q = piatto.quantita || 1; 
-    const prezzoPiattoAttuale = (piatto.prezzo + (piatto.extraPrezzo || 0));
-    let costoRiga = prezzoPiattoAttuale * q;
-
-    if (piatto.sconto) {
+  // ASSICURATI DI AVERE QUESTA MATEMATICA SUL LATO CLIENTI PER GLI SCONTI!
+    function calcolaPrezzoPreordine(piatto) { 
+        const q = piatto.quantita || 1; 
+        const prezzoBaseEExtra = (piatto.prezzo + (piatto.extraPrezzo || 0));
+    
+        if (!piatto.sconto) return prezzoBaseEExtra * q;
+    
         if (piatto.sconto.tipo === "percentuale") {
-            costoRiga = costoRiga - (costoRiga * (piatto.sconto.valore / 100));
-        } else if (piatto.sconto.tipo === "fisso") {
-            costoRiga = costoRiga - (piatto.sconto.valore * q);
-        } else if (piatto.sconto.tipo === "quantita" && q >= piatto.sconto.quantitaMinima) {
-            const gruppi = Math.floor(q / piatto.sconto.quantitaMinima);
-            const resto = q % piatto.sconto.quantitaMinima;
-            costoRiga = (gruppi * piatto.sconto.prezzoScontato) + (resto * prezzoPiattoAttuale);
+            return prezzoBaseEExtra * q * (1 - piatto.sconto.valore/100);
+        } else if (piatto.sconto.tipo === "x_paga_y") {
+            const x = parseInt(piatto.sconto.valore.x);
+            const y = parseInt(piatto.sconto.valore.y);
+            return (Math.floor(q / x) * y + (q % x)) * prezzoBaseEExtra;
+        } else if (piatto.sconto.tipo === "x_paga_y_fisso") {
+            const x = parseInt(piatto.sconto.valore.x);
+            const y = parseFloat(piatto.sconto.valore.y);
+            return (Math.floor(q / x) * y) + (q % x) * prezzoBaseEExtra;
         }
-        costoRiga = Math.max(0, costoRiga);
+        return prezzoBaseEExtra * q;
     }
-    return costoRiga;
-}
 
   // 🔹 Disabilita "resto richiesto" se spunta "soldi giusti"
   const checkSoldi = document.getElementById("soldiGiusti");
