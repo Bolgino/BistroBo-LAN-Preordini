@@ -849,7 +849,7 @@ async function initPreordiniClienti() {
             if (window.settings.piattiComboAbilitati && item.isCombo) {
                 clickAction = `apriPopupCombo('${id}', 'preordine')`;
             } else {
-                clickAction = `apriPopupPersonalizzaCliente('${id}')`;
+                clickAction = `aggiungiVeloceCarrello('${id}')`; // <-- Usa l'aggiunta veloce!
             }
             
             const btnHtml = `
@@ -922,6 +922,10 @@ async function initPreordiniClienti() {
         if (carrelloContainer) {
             carrelloContainer.style.display = carrelloCliente.length === 0 ? "none" : "block";
         }
+      // AGGIUNTA NOTA INFORMATIVA:
+        if (listaCarrello && carrelloCliente.length > 0 && window.settings.sistemaExtraAbilitato) {
+             listaCarrello.innerHTML = "<div style='font-size:0.85em; color:#777; font-style:italic; margin-bottom:5px; text-align:center;'>Clicca sul nome di un piatto per aggiungere o togliere ingredienti.</div>";
+        }
     
         carrelloCliente.forEach((item, index) => {
             const costoRiga = item.prezzo + item.extraPrezzo;
@@ -943,17 +947,21 @@ async function initPreordiniClienti() {
                     </div>`;
                 }
     
-                // Disegniamo la riga del carrello imponendo le proporzioni corrette
-            divRiga.innerHTML = `
-                <div style="flex: 1 1 auto; text-align: left; padding-right: 15px; word-break: break-word;">
-                    <b style="color: #333; font-size: 1.1em;">${item.nome}</b>
-                    ${htmlVarianti}
-                </div>
-                <div style="flex: 0 0 auto; font-weight: bold; font-size: 1.1em; color: #4CAF50; white-space: nowrap; margin-right: 15px;">
-                    €${costoRiga.toFixed(2)}
-                </div>
-                <button onclick="rimuoviDalCarrello(${index})" style="flex: 0 0 auto; background: #fff; color: #ff5252; border: 1px solid #ff5252; border-radius: 8px; padding: 6px 12px; cursor: pointer; font-size: 0.9em; font-weight: bold; transition: 0.2s; white-space: nowrap;">Rimuovi</button>
-            `;
+                // Rende il nome cliccabile SOLO se Extra è ON
+                const onclickStr = window.settings.sistemaExtraAbilitato ? `onclick="apriPopupPersonalizzaClienteModifica(${index})"` : "";
+                const cursorStr = window.settings.sistemaExtraAbilitato ? "cursor: pointer; text-decoration: underline;" : "";
+    
+                divRiga.innerHTML = `
+                    <div style="flex: 1 1 auto; text-align: left; padding-right: 15px; word-break: break-word;">
+                        <b ${onclickStr} style="color: #333; font-size: 1.1em; ${cursorStr}" title="${window.settings.sistemaExtraAbilitato ? 'Clicca per personalizzare' : ''}">${item.nome}</b>
+                        ${htmlVarianti}
+                        ${htmlCombo}
+                    </div>
+                    <div style="flex: 0 0 auto; font-weight: bold; font-size: 1.1em; color: #4CAF50; white-space: nowrap; margin-right: 15px;">
+                        €${costoRigaGrezzo.toFixed(2)}
+                    </div>
+                    <button onclick="rimuoviDalCarrello(${index})" style="flex: 0 0 auto; background: #fff; color: #ff5252; border: 1px solid #ff5252; border-radius: 8px; padding: 6px 12px; cursor: pointer; font-size: 0.9em; font-weight: bold; transition: 0.2s; white-space: nowrap;">Rimuovi</button>
+                `;
                 listaCarrello.appendChild(divRiga);
             }
         });
@@ -1231,7 +1239,23 @@ db.ref("ingredienti").on("value", snapIng => {
         };
     };
 }
+window.apriPopupPersonalizzaClienteModifica = function(idxCarrello) {
+    const piattoCarrello = carrelloCliente[idxCarrello];
+    const piattoMenu = menuItems[piattoCarrello.id];
+    if (!piattoMenu) return;
 
+    idPiattoInModifica = idxCarrello; // ⚠️ Qui salviamo l'INDICE NUMERICO del carrello
+    tempVariantiCliente = JSON.parse(JSON.stringify(piattoCarrello.varianti || []));
+    
+    const popup = document.getElementById("popupPersonalizzaCliente");
+    const maxGratis = piattoMenu.maxVariantiGratis || 0;
+    const testoGratis = maxGratis > 0 ? `<br><small style="color:green; font-size:0.7em;">Hai ${maxGratis} aggiunte GRATIS su questo prodotto!</small>` : "";
+    
+    document.getElementById("titoloPersonalizza").innerHTML = `Modifica: ${piattoCarrello.nome} ${testoGratis}`;
+    popup.style.display = "flex";
+
+    renderVariantiCliente(piattoMenu, maxGratis);
+};
 // ================================================================
 // ========== AUTO-DETECT DEL CONTESTO ============================
 // ================================================================
@@ -1520,22 +1544,30 @@ function renderVariantiCliente(piatto, maxGratis) {
         listaDiv.appendChild(row);
     });
 
-    document.getElementById("btnConfermaPersonalizzazione").onclick = () => {
+   document.getElementById("btnConfermaPersonalizzazione").onclick = () => {
         let extraFinali = 0;
         tempVariantiCliente.filter(v => v.tipo === "aggiunta").forEach((v, index) => {
             if (index >= maxGratis) extraFinali += Number(v.prezzo || 0);
         });
 
-        carrelloCliente.push({
-            id: idPiattoInModifica,
-            nome: piatto.nome,
-            prezzo: piatto.prezzo, 
-            categoria: piatto.categoria,
-            varianti: tempVariantiCliente,
-            extraPrezzo: extraFinali,
-            quantita: 1,
-            sconto: piatto.sconto || null
-        });
+        if (typeof idPiattoInModifica === "number") {
+            // MODIFICA PIATTO ESISTENTE NEL CARRELLO
+            carrelloCliente[idPiattoInModifica].varianti = tempVariantiCliente;
+            carrelloCliente[idPiattoInModifica].extraPrezzo = extraFinali;
+        } else {
+            // AGGIUNTA COME PIATTO NUOVO
+            carrelloCliente.push({
+                id: idPiattoInModifica,
+                nome: piatto.nome,
+                prezzo: piatto.prezzo, 
+                categoria: piatto.categoria,
+                ingredienti: piatto.ingredienti || [],
+                varianti: tempVariantiCliente,
+                extraPrezzo: extraFinali,
+                quantita: 1,
+                sconto: piatto.sconto || null
+            });
+        }
         
         chiudiPopupPersonalizza();
         aggiornaRiepilogoCarrelloUI();  
@@ -1834,6 +1866,7 @@ window.aggiungiComboCarrelloCliente = function(piattoCombo, idCombo, contorniDaS
         nome: piattoCombo.nome,
         prezzo: piattoCombo.prezzo, 
         categoria: piattoCombo.categoria,
+        ingredienti: piattoCombo.ingredienti || [],
         varianti: [], 
         extraPrezzo: extraComboCalcolato, 
         quantita: 1,
