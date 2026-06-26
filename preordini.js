@@ -1531,17 +1531,24 @@ function calcolaPrezzoConScontoPerPiattoSingolo(piatto) {
 // ==========================================
 function calcolaPrezzoConScontoPerPiatto(piatto, comandaIntera) {
     const q = piatto.quantita || 1;
-    const prezzoBaseEExtra = piatto.prezzo + (piatto.extraPrezzo || 0);
+    const prezzoBaseEExtra = (piatto.prezzo || 0) + (piatto.extraPrezzo || 0);
 
-    if(!piatto.sconto) return prezzoBaseEExtra * q;
-    if(piatto.sconto.tipo === "percentuale"){
-        return prezzoBaseEExtra * q * (1 - (Number(piatto.sconto.valore)||0)/100);
+    // Se non ha sconto registrato, usa il prezzo pieno
+    if (!piatto.sconto) return prezzoBaseEExtra * q;
+
+    // Sconto Percentuale
+    if (piatto.sconto.tipo === "percentuale") {
+        return prezzoBaseEExtra * q * (1 - (Number(piatto.sconto.valore) || 0) / 100);
     } 
 
-    if(piatto.sconto.tipo === "x_paga_y" || piatto.sconto.tipo === "x_paga_y_fisso"){
-        let qTotale = comandaIntera.filter(p => p.id === piatto.id).reduce((sum, p) => sum + (p.quantita || 1), 0);
+    // Sconti x_paga_y e x_paga_y_fisso
+    if (piatto.sconto.tipo === "x_paga_y" || piatto.sconto.tipo === "x_paga_y_fisso") {
+        // Poiché nel carrello clienti i piatti uguali sono su righe separate (q = 1), 
+        // calcoliamo quante volte questo IDENTICO ID piatto compare in tutto il carrello
+        let qTotale = comandaIntera.filter(p => p.id === piatto.id).length;
         const x = parseInt(piatto.sconto.valore.x);
 
+        // Se non raggiungiamo la soglia dell'offerta, niente sconto
         if (qTotale < x) return prezzoBaseEExtra * q;
 
         const numGruppi = Math.floor(qTotale / x);
@@ -1559,43 +1566,10 @@ function calcolaPrezzoConScontoPerPiatto(piatto, comandaIntera) {
         const costoTotaleBase = qTotale * piatto.prezzo;
         const scontoTotale = costoTotaleBase - costoScontatoIntero;
 
+        // Ripartiamo lo sconto totale matematicamente su questa singola riga (q)
         return (prezzoBaseEExtra * q) - ((q / qTotale) * scontoTotale);
     }
-    return prezzoBaseEExtra * q;
-}
 
-function calcolaPrezzoConScontoPerPiatto(piatto, comandaIntera) {
-    const q = piatto.quantita || 1;
-    const prezzoBaseEExtra = piatto.prezzo + (piatto.extraPrezzo || 0);
-
-    if(!piatto.sconto) return prezzoBaseEExtra * q;
-    if(piatto.sconto.tipo === "percentuale"){
-        return prezzoBaseEExtra * q * (1 - (Number(piatto.sconto.valore)||0)/100);
-    } 
-
-    if(piatto.sconto.tipo === "x_paga_y" || piatto.sconto.tipo === "x_paga_y_fisso"){
-        let qTotale = comandaIntera.filter(p => p.id === piatto.id).reduce((sum, p) => sum + (p.quantita || 1), 0);
-        const x = parseInt(piatto.sconto.valore.x);
-
-        if (qTotale < x) return prezzoBaseEExtra * q;
-
-        const numGruppi = Math.floor(qTotale / x);
-        const resto = qTotale % x;
-
-        let costoScontatoIntero = 0;
-        if (piatto.sconto.tipo === "x_paga_y") {
-            const y = parseInt(piatto.sconto.valore.y);
-            costoScontatoIntero = (numGruppi * y * piatto.prezzo) + (resto * piatto.prezzo);
-        } else { 
-            const y = parseFloat(piatto.sconto.valore.y);
-            costoScontatoIntero = (numGruppi * y) + (resto * piatto.prezzo);
-        }
-
-        const costoTotaleBase = qTotale * piatto.prezzo;
-        const scontoTotale = costoTotaleBase - costoScontatoIntero;
-
-        return (prezzoBaseEExtra * q) - ((q / qTotale) * scontoTotale);
-    }
     return prezzoBaseEExtra * q;
 }
 
@@ -1728,9 +1702,7 @@ window.apriPopupVariantiContornoCliente = function(idxCarrello, idxContorno) {
         const aggiunteFatte = tempVariantiCliente.filter(v => v.tipo === "aggiunta").length;
         const isProssimaGratis = aggiunteFatte < maxGratis;
 
-
-
-       // FIX: Recuperiamo sia ID che Nomi per retrocompatibilità
+        // FIX: Recuperiamo sia ID che Nomi per retrocompatibilità
         const baseIds = (piattoOriginale.ingredienti || []).map(i => i.id).filter(id => id);
         const baseNomi = (piattoOriginale.ingredienti || []).map(i => (i.nome || "").trim().toLowerCase());
 
@@ -1741,7 +1713,6 @@ window.apriPopupVariantiContornoCliente = function(idxCarrello, idxContorno) {
             if (catPiatto === "cucina") catPiatto = "cibi";
 
             const isBase = baseIds.includes(ingId) || baseNomi.includes((ing.nome || "").trim().toLowerCase());
-            
             const isExtraFlag = (ing.usabileComeExtra === true) && catsApp.includes(catPiatto);
 
             let allowRemove = false;
@@ -1776,7 +1747,7 @@ window.apriPopupVariantiContornoCliente = function(idxCarrello, idxContorno) {
                 btnRemove.onclick = () => {
                     if (isRimosso) tempVariantiCliente = tempVariantiCliente.filter(v => !(v.tipo === "rimozione" && v.id === ingId));
                     else tempVariantiCliente.push({ tipo: "rimozione", id: ingId, nome: ing.nome });
-                    renderVariantiCliente();
+                    renderVariantiContorno(); // 🔥 FIX: Chiamata corretta
                 };
                 btnContainer.appendChild(btnRemove);
             }
@@ -1791,18 +1762,18 @@ window.apriPopupVariantiContornoCliente = function(idxCarrello, idxContorno) {
                     btnMinus.onclick = () => {
                         const rIndex = [...tempVariantiCliente].reverse().findIndex(v => v.tipo === "aggiunta" && v.id === ingId);
                         if (rIndex !== -1) tempVariantiCliente.splice(tempVariantiCliente.length - 1 - rIndex, 1);
-                        renderVariantiCliente();
+                        renderVariantiContorno(); // 🔥 FIX: Chiamata corretta
                     };
                     const spanCount = document.createElement("span"); spanCount.innerText = occorrenze; spanCount.style.cssText = "margin:0 8px; font-weight:bold;";
                     const btnPlus = document.createElement("button"); btnPlus.innerText = "+"; btnPlus.style.cssText = "background:#4CAF50; color:white; padding:4px 10px; border-radius:5px; border:none;";
-                    btnPlus.onclick = () => { tempVariantiCliente.push({ tipo: "aggiunta", id: ingId, nome: ing.nome, qty: 1, prezzo: costoExtra }); renderVariantiCliente(); };
+                    btnPlus.onclick = () => { tempVariantiCliente.push({ tipo: "aggiunta", id: ingId, nome: ing.nome, qty: 1, prezzo: costoExtra }); renderVariantiContorno(); }; // 🔥 FIX: Chiamata corretta
 
                     wrapperAdd.appendChild(btnMinus); wrapperAdd.appendChild(spanCount); wrapperAdd.appendChild(btnPlus);
                 } else {
                     const btnAdd = document.createElement("button");
                     btnAdd.innerText = isProssimaGratis ? `+ Gratis` : `+ €${costoExtra.toFixed(2)}`;
                     btnAdd.style.cssText = "background:#4CAF50; color:white; padding:5px 10px; border-radius:5px; border:none;";
-                    btnAdd.onclick = () => { tempVariantiCliente.push({ tipo: "aggiunta", id: ingId, nome: ing.nome, qty: 1, prezzo: costoExtra }); renderVariantiCliente(); };
+                    btnAdd.onclick = () => { tempVariantiCliente.push({ tipo: "aggiunta", id: ingId, nome: ing.nome, qty: 1, prezzo: costoExtra }); renderVariantiContorno(); }; // 🔥 FIX: Chiamata corretta
                     wrapperAdd.appendChild(btnAdd);
                 }
                 btnContainer.appendChild(wrapperAdd);
