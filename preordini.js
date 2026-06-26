@@ -676,22 +676,21 @@ window.aggiungiVeloceCarrello = function(id) {
     const piatto = menuItems[id];
     if (!piatto) return;
     
-    const prezzoBaseScontato = calcolaPrezzoConScontoPerPiattoSingolo(piatto); 
-    
     carrelloCliente.push({
         id: id,
         nome: piatto.nome,
-        prezzo: prezzoBaseScontato, 
+        prezzo: piatto.prezzo, // 🔥 Usiamo sempre il prezzo puro per permettere i calcoli 3x2
+        sconto: piatto.sconto || null, // 🔥 Fondamentale per i 3x2
         categoria: piatto.categoria,
-        varianti: [], // Nessuna variante concessa!
+        ingredienti: piatto.ingredienti ? JSON.parse(JSON.stringify(piatto.ingredienti)) : [],
+        varianti: [], 
+        contorniScelti: [],
         extraPrezzo: 0,
         quantita: 1,
         maxVariantiGratis: piatto.maxVariantiGratis || 0
     });
     
-    if (typeof aggiornaRiepilogoCarrelloUI === "function") {
-        aggiornaRiepilogoCarrelloUI();
-    }
+    if (typeof aggiornaRiepilogoCarrelloUI === "function") aggiornaRiepilogoCarrelloUI();
 };
 // ================================================================
 // ========== 3️⃣ PARTE CLIENTI (pagina preordina.html) ============
@@ -1500,15 +1499,17 @@ function renderVariantiCliente(piatto, maxGratis) {
         } else {
             // AGGIUNTA COME PIATTO NUOVO
             carrelloCliente.push({
-                id: idPiattoInModifica,
+                id: idPiattoInModifica, // Salva l'ID Firebase originale per gli sconti
                 nome: piatto.nome,
                 prezzo: piatto.prezzo, 
+                sconto: piatto.sconto || null, // 🔥 Manteniamo lo sconto!
                 categoria: piatto.categoria,
-                ingredienti: piatto.ingredienti || [],
+                ingredienti: piatto.ingredienti ? JSON.parse(JSON.stringify(piatto.ingredienti)) : [],
                 varianti: tempVariantiCliente,
+                contorniScelti: [],
                 extraPrezzo: extraFinali,
                 quantita: 1,
-                sconto: piatto.sconto || null
+                maxVariantiGratis: piatto.maxVariantiGratis || 0
             });
         }
         
@@ -1533,25 +1534,30 @@ function calcolaPrezzoConScontoPerPiattoSingolo(piatto) {
 function calcolaPrezzoConScontoPerPiatto(piatto, comandaIntera) {
     const q = piatto.quantita || 1;
     
-    // 🔥 FIX SCONTI E CONTORNI: Il prezzo base della riga deve includere ANCHE il costo dei contorni a pagamento!
+    // 1. Sommiamo tutti i costi extra dei contorni (Prezzo base del contorno + le sue varianti a pagamento)
     let costoContorni = 0;
     if (piatto.contorniScelti && piatto.contorniScelti.length > 0) {
-        piatto.contorniScelti.forEach(c => costoContorni += (c.prezzoPagato || 0));
+        piatto.contorniScelti.forEach(c => costoContorni += (c.prezzoPagato || 0) + (c.extraPrezzo || 0));
     }
-    const prezzoBaseEExtra = (piatto.prezzo || 0) + (piatto.extraPrezzo || 0) + costoContorni;
+    
+    // 2. Prezzo totale grezzo della singola riga
+    const prezzoRigaSenzaSconto = (piatto.prezzo || 0) + (piatto.extraPrezzo || 0) + costoContorni;
 
-    if (!piatto.sconto) return prezzoBaseEExtra * q;
+    if(!piatto.sconto) return prezzoRigaSenzaSconto * q;
 
-    if (piatto.sconto.tipo === "percentuale") {
-        return prezzoBaseEExtra * q * (1 - (Number(piatto.sconto.valore)||0)/100);
+    // 3. Sconto percentuale applicato SOLAMENTE sul prezzo base del piatto (non sugli extra)
+    if(piatto.sconto.tipo === "percentuale"){
+        const scontoNetto = (piatto.prezzo || 0) * ((Number(piatto.sconto.valore)||0)/100);
+        return (prezzoRigaSenzaSconto - scontoNetto) * q;
     } 
 
-    if (piatto.sconto.tipo === "x_paga_y" || piatto.sconto.tipo === "x_paga_y_fisso") {
-        // 🔥 FIX SCONTI x_paga_y: Contiamo quanti piatti dello stesso ID ci sono nell'intero carrello.
+    // 4. Sconti 3x2, ecc..
+    if(piatto.sconto.tipo === "x_paga_y" || piatto.sconto.tipo === "x_paga_y_fisso"){
+        // Conta quante volte compare questo stesso ID in tutto il carrello
         let qTotale = comandaIntera.filter(p => p.id === piatto.id).length;
         const x = parseInt(piatto.sconto.valore.x);
 
-        if (qTotale < x) return prezzoBaseEExtra * q;
+        if (qTotale < x) return prezzoRigaSenzaSconto * q;
 
         const numGruppi = Math.floor(qTotale / x);
         const resto = qTotale % x;
@@ -1560,7 +1566,7 @@ function calcolaPrezzoConScontoPerPiatto(piatto, comandaIntera) {
         if (piatto.sconto.tipo === "x_paga_y") {
             const y = parseInt(piatto.sconto.valore.y);
             costoScontatoIntero = (numGruppi * y * piatto.prezzo) + (resto * piatto.prezzo);
-        } else { // x_paga_y_fisso
+        } else { 
             const y = parseFloat(piatto.sconto.valore.y);
             costoScontatoIntero = (numGruppi * y) + (resto * piatto.prezzo);
         }
@@ -1568,10 +1574,10 @@ function calcolaPrezzoConScontoPerPiatto(piatto, comandaIntera) {
         const costoTotaleBase = qTotale * piatto.prezzo;
         const scontoTotale = costoTotaleBase - costoScontatoIntero;
 
-        // Ritorniamo il prezzo della riga meno la quota proporzionale dello sconto
-        return (prezzoBaseEExtra * q) - ((q / qTotale) * scontoTotale);
+        // Ritorniamo il prezzo della riga sottraendo la quota parte di sconto
+        return (prezzoRigaSenzaSconto * q) - ((q / qTotale) * scontoTotale);
     }
-    return prezzoBaseEExtra * q;
+    return prezzoRigaSenzaSconto * q;
 }
 
 function aggiornaRiepilogoCarrelloUI() {
@@ -1588,12 +1594,12 @@ function aggiornaRiepilogoCarrelloUI() {
     }
 
     carrelloCliente.forEach((item, index) => {
-        // 🔥 FIX TOTALI: Calcolo corretto del costo grezzo della riga includendo i contorni pagati extra
         let costoContorniPagati = 0;
         if (item.contorniScelti && item.contorniScelti.length > 0) {
-            item.contorniScelti.forEach(c => costoContorniPagati += (c.prezzoPagato || 0));
+            item.contorniScelti.forEach(c => costoContorniPagati += (c.prezzoPagato || 0) + (c.extraPrezzo || 0));
         }
         
+        // Calcolo reale del prezzo della riga
         const costoRigaGrezzo = (item.prezzo || 0) + (item.extraPrezzo || 0) + costoContorniPagati;
         const costoRigaScontato = calcolaPrezzoConScontoPerPiatto(item, carrelloCliente);
         
@@ -1629,9 +1635,12 @@ function aggiornaRiepilogoCarrelloUI() {
                     const clickStr = window.settings.sistemaExtraAbilitato ? `onclick="apriPopupVariantiContornoCliente(${index}, ${cIdx})"` : "";
                     const curStr = window.settings.sistemaExtraAbilitato ? "cursor:pointer; text-decoration:underline;" : "cursor:default;";
 
-                    return c.isGratis 
+                    // 🔥 Mostra esplicitamente se ci sono extra a pagamento sul contorno
+                    const extraCostoStr = ((c.prezzoPagato || 0) + (c.extraPrezzo || 0)) > 0 ? ` (+€${((c.prezzoPagato || 0) + (c.extraPrezzo || 0)).toFixed(2)})` : "";
+
+                    return c.isGratis && extraCostoStr === ""
                         ? `<span style="color:#2e7d32; font-weight:bold; ${curStr}" ${clickStr}>↳ ${c.nome}${varsTxt}</span>` 
-                        : `<span style="color:#555; ${curStr}" ${clickStr}>↳ ${c.nome} (+€${c.prezzoPagato.toFixed(2)})${varsTxt}</span>`;
+                        : `<span style="color:#555; ${curStr}" ${clickStr}>↳ ${c.nome}${extraCostoStr}${varsTxt}</span>`;
                 }).join("<br>");
                 htmlCombo = `<div style="font-size: 0.85em; margin-top: 4px;">${cTxt}</div>`;
             }
@@ -1656,7 +1665,7 @@ function aggiornaRiepilogoCarrelloUI() {
 
     totale = Number(nuovoTotale.toFixed(2));
     
-    // 🔥 FIX SCONTI UI: Mostriamo il riepilogo "Sconto Applicato" se c'è un risparmio
+    // Mostriamo il risparmio se c'è
     const risparmio = totaleGrezzo - totale;
     if (risparmio > 0.01 && listaCarrello) {
         const divSconto = document.createElement("div");
@@ -1680,6 +1689,7 @@ function aggiornaRiepilogoCarrelloUI() {
         });
     }
 }
+
 window.apriPopupVariantiContornoCliente = function(idxCarrello, idxContorno) {
     const piattoPadre = carrelloCliente[idxCarrello];
     const contorno = piattoPadre.contorniScelti[idxContorno];
@@ -1788,34 +1798,27 @@ window.apriPopupVariantiContornoCliente = function(idxCarrello, idxContorno) {
 
     renderVariantiContorno();
 
-    // 🔥 FIX: Usa l'ID corretto del bottone Salva!
+    // 🔥 FIX: Salvataggio isolato per il contorno (non tocca il piatto principale!)
     const btnSalva = document.getElementById("btnConfermaPersonalizzazione");
     if(btnSalva) {
         btnSalva.onclick = () => {
             contorno.varianti = tempVariantiCliente;
             let ext = 0;
-            tempVariantiCliente.filter(v => v.tipo === "aggiunta").forEach((v, idx) => { if (idx >= maxGratis) ext += Number(v.prezzo || 0); });
-            contorno.extraPrezzo = ext;
-
-            // Ricalcola il totale extra del piattoPadre
-            let nuovoExtraPrezzoPiatto = 0;
-            piattoPadre.contorniScelti.forEach(c => { nuovoExtraPrezzoPiatto += (c.prezzoPagato || 0) + (c.extraPrezzo || 0); });
-            let extVarPiatto = 0; const mxGr = piattoPadre.maxVariantiGratis || 0;
-            (piattoPadre.varianti || []).filter(v => v.tipo === "aggiunta").forEach((v, index) => { if (index >= mxGr) extVarPiatto += Number(v.prezzo || 0); });
-            
-            piattoPadre.extraPrezzo = extVarPiatto + nuovoExtraPrezzoPiatto;
+            tempVariantiCliente.filter(v => v.tipo === "aggiunta").forEach((v, idx) => { 
+                if (idx >= maxGratis) ext += Number(v.prezzo || 0); 
+            });
+            contorno.extraPrezzo = ext; // Salva l'extra SOLO nel contorno
 
             chiudiPopupPersonalizza();
             aggiornaRiepilogoCarrelloUI();
         };
     }
 
-    // 🔥 FIX: Usa l'ID corretto del bottone Annulla!
     const btnAnnulla = document.getElementById("btnAnnullaPersonalizzazione");
     if(btnAnnulla) {
         btnAnnulla.onclick = () => { chiudiPopupPersonalizza(); };
     }
-}
+} // <-- fine funzione apriPopupVariantiContornoCliente
 document.addEventListener('DOMContentLoaded', () => {
     const standDisplay = document.getElementById('nome-stand-display');
 
