@@ -1553,11 +1553,11 @@ function calcolaPrezzoConScontoPerPiatto(piatto, comandaIntera) {
 
     // 4. Sconti 3x2, ecc..
     if(piatto.sconto.tipo === "x_paga_y" || piatto.sconto.tipo === "x_paga_y_fisso"){
-        // Conta quante volte compare questo stesso ID in tutto il carrello
+        // Conta quante volte compare questo stesso ID in tutto il carrello preordini
         let qTotale = comandaIntera.filter(p => p.id === piatto.id).length;
         const x = parseInt(piatto.sconto.valore.x);
 
-        if (qTotale < x) return prezzoRigaSenzaSconto * q;
+        if (qTotale < x) return prezzoRigaSenzaSconto * q; // Soglia non raggiunta
 
         const numGruppi = Math.floor(qTotale / x);
         const resto = qTotale % x;
@@ -1574,7 +1574,7 @@ function calcolaPrezzoConScontoPerPiatto(piatto, comandaIntera) {
         const costoTotaleBase = qTotale * piatto.prezzo;
         const scontoTotale = costoTotaleBase - costoScontatoIntero;
 
-        // Ritorniamo il prezzo della riga sottraendo la quota parte di sconto
+        // Ritorniamo il prezzo della riga sottraendo la quota parte di sconto calcolata per questa unità
         return (prezzoRigaSenzaSconto * q) - ((q / qTotale) * scontoTotale);
     }
     return prezzoRigaSenzaSconto * q;
@@ -1798,7 +1798,7 @@ window.apriPopupVariantiContornoCliente = function(idxCarrello, idxContorno) {
 
     renderVariantiContorno();
 
-    // 🔥 FIX: Salvataggio isolato per il contorno (non tocca il piatto principale!)
+    // 🔥 FIX: Salva l'extra SOLO nel contorno!
     const btnSalva = document.getElementById("btnConfermaPersonalizzazione");
     if(btnSalva) {
         btnSalva.onclick = () => {
@@ -1807,7 +1807,7 @@ window.apriPopupVariantiContornoCliente = function(idxCarrello, idxContorno) {
             tempVariantiCliente.filter(v => v.tipo === "aggiunta").forEach((v, idx) => { 
                 if (idx >= maxGratis) ext += Number(v.prezzo || 0); 
             });
-            contorno.extraPrezzo = ext; // Salva l'extra SOLO nel contorno
+            contorno.extraPrezzo = ext; 
 
             chiudiPopupPersonalizza();
             aggiornaRiepilogoCarrelloUI();
