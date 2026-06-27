@@ -1495,7 +1495,15 @@ function renderVariantiCliente(piatto, maxGratis) {
         if (typeof idPiattoInModifica === "number") {
             // MODIFICA PIATTO ESISTENTE NEL CARRELLO
             carrelloCliente[idPiattoInModifica].varianti = tempVariantiCliente;
-            carrelloCliente[idPiattoInModifica].extraPrezzo = extraFinali;
+            
+            // FIX: Sommiamo agli extra del piatto anche gli extra passati dei contorni
+            let costoContorni = 0;
+            if (carrelloCliente[idPiattoInModifica].contorniScelti && carrelloCliente[idPiattoInModifica].contorniScelti.length > 0) {
+                carrelloCliente[idPiattoInModifica].contorniScelti.forEach(c => {
+                    costoContorni += (c.prezzoPagato || 0) + (c.extraPrezzo || 0);
+                });
+            }
+            carrelloCliente[idPiattoInModifica].extraPrezzo = extraFinali + costoContorni;
         } else {
             // AGGIUNTA COME PIATTO NUOVO
             carrelloCliente.push({
@@ -1596,6 +1604,7 @@ function aggiornaRiepilogoCarrelloUI() {
     carrelloCliente.forEach((item, index) => {
         let costoContorniPagati = 0;
         if (item.contorniScelti && item.contorniScelti.length > 0) {
+            // FIX: Aggiunto c.extraPrezzo per far figurare il prezzo extra delle salse sui contorni
             item.contorniScelti.forEach(c => costoContorniPagati += (c.prezzoPagato || 0) + (c.extraPrezzo || 0));
         }
         
