@@ -1371,8 +1371,16 @@ function renderVariantiCliente(piatto, maxGratis) {
         if (index >= maxGratis) totaleExtra += Number(v.prezzo || 0);
     });
 
+    // --- NUOVO FIX: Leggiamo i contorni per mostrarli correttamente a schermo nel popup ---
+    let costoContorniEsistenti = 0;
+    if (typeof idPiattoInModifica === "number" && carrelloCliente[idPiattoInModifica] && carrelloCliente[idPiattoInModifica].contorniScelti) {
+        carrelloCliente[idPiattoInModifica].contorniScelti.forEach(c => {
+            costoContorniEsistenti += (c.prezzoPagato || 0) + (c.extraPrezzo || 0);
+        });
+    }
+
     const prezzoBaseScontato = calcolaPrezzoConScontoPerPiattoSingolo(piatto); 
-    document.getElementById("totalePiattoPersonalizzato").innerText = (prezzoBaseScontato + totaleExtra).toFixed(2);
+    document.getElementById("totalePiattoPersonalizzato").innerText = (prezzoBaseScontato + totaleExtra + costoContorniEsistenti).toFixed(2);
 
     const aggiunteFatte = tempVariantiCliente.filter(v => v.tipo === "aggiunta").length;
     const isProssimaGratis = aggiunteFatte < maxGratis;
@@ -1495,15 +1503,7 @@ function renderVariantiCliente(piatto, maxGratis) {
         if (typeof idPiattoInModifica === "number") {
             // MODIFICA PIATTO ESISTENTE NEL CARRELLO
             carrelloCliente[idPiattoInModifica].varianti = tempVariantiCliente;
-            
-            // FIX: Sommiamo agli extra del piatto anche gli extra passati dei contorni
-            let costoContorni = 0;
-            if (carrelloCliente[idPiattoInModifica].contorniScelti && carrelloCliente[idPiattoInModifica].contorniScelti.length > 0) {
-                carrelloCliente[idPiattoInModifica].contorniScelti.forEach(c => {
-                    costoContorni += (c.prezzoPagato || 0) + (c.extraPrezzo || 0);
-                });
-            }
-            carrelloCliente[idPiattoInModifica].extraPrezzo = extraFinali + costoContorni;
+            carrelloCliente[idPiattoInModifica].extraPrezzo = extraFinali; // <-- SOLO extraFinali! Niente somme dei contorni qui.
         } else {
             // AGGIUNTA COME PIATTO NUOVO
             carrelloCliente.push({
@@ -1604,11 +1604,9 @@ function aggiornaRiepilogoCarrelloUI() {
     carrelloCliente.forEach((item, index) => {
         let costoContorniPagati = 0;
         if (item.contorniScelti && item.contorniScelti.length > 0) {
-            // FIX: Aggiunto c.extraPrezzo per far figurare il prezzo extra delle salse sui contorni
             item.contorniScelti.forEach(c => costoContorniPagati += (c.prezzoPagato || 0) + (c.extraPrezzo || 0));
         }
         
-        // Calcolo reale del prezzo della riga
         const costoRigaGrezzo = (item.prezzo || 0) + (item.extraPrezzo || 0) + costoContorniPagati;
         const costoRigaScontato = calcolaPrezzoConScontoPerPiatto(item, carrelloCliente);
         
