@@ -1154,6 +1154,9 @@ db.ref("ingredienti").on("value", snapIng => {
                 document.querySelectorAll("select[data-id]").forEach(sel => sel.value = "0");
                 totale = 0;
                 document.getElementById("totaleCliente").innerText = "0.00";
+                // 🔥 AGGIUNGI QUESTE DUE RIGHE QUI: Svuota il carrello e aggiorna la grafica
+                carrelloCliente = [];
+                if (typeof aggiornaRiepilogoCarrelloUI === "function") aggiornaRiepilogoCarrelloUI();
 
             } catch (err) {
                 console.error(err);
