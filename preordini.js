@@ -244,13 +244,13 @@ async function renderPreordiniAdmin(data) {
 
         const p = data[id];
 
-        const piattiCibo = p.piatti?.filter(i => i.categoria !== "bevande" && i.categoria !== "snack") || [];
-        const piattiBere = p.piatti?.filter(i => i.categoria === "bevande") || [];
-        let piattiSnack = p.piatti?.filter(i => i.categoria === "snack") || [];
-        if (!window.settings.snackAbilitato && piattiSnack.length > 0) {
-            piattiCibo.push(...piattiSnack);
-            piattiSnack = [];
-        }
+        const { cibo, bere, snack, extra1, extra2, extra3 } = separaComanda(p.piatti || []);
+        
+        // Mettiamo tutto il cibo e gli extra insieme per la visualizzazione semplificata nel riquadro.
+        // Al momento dell'aggiunta alla Cassa verranno in automatico smistati correttamente!
+        const piattiCibo = [...cibo, ...extra1, ...extra2, ...extra3]; 
+        const piattiBere = bere;
+        let piattiSnack = snack;
         
         let totale = 0;
         [...piattiCibo, ...piattiBere, ...piattiSnack].forEach(pi => {
@@ -431,13 +431,13 @@ function renderPreordiniCassa(data) {
     ultimiPreordini = Object.fromEntries(entries);
 
     entries.forEach(([id, p]) => {
-        const piattiCibo = p.piatti?.filter(i => i.categoria !== "bevande" && i.categoria !== "snack") || [];
-        const piattiBere = p.piatti?.filter(i => i.categoria === "bevande") || [];
-        let piattiSnack = p.piatti?.filter(i => i.categoria === "snack") || [];
-        if (!window.settings.snackAbilitato && piattiSnack.length > 0) {
-            piattiCibo.push(...piattiSnack);
-            piattiSnack = [];
-        }
+        const { cibo, bere, snack, extra1, extra2, extra3 } = separaComanda(p.piatti || []);
+        
+        // Mettiamo tutto il cibo e gli extra insieme per la visualizzazione semplificata nel riquadro.
+        // Al momento dell'aggiunta alla Cassa verranno in automatico smistati correttamente!
+        const piattiCibo = [...cibo, ...extra1, ...extra2, ...extra3]; 
+        const piattiBere = bere;
+        let piattiSnack = snack;
 
         let totale = 0;
         p.piatti?.forEach(pi => totale += (Number(pi.prezzo || 0) * (pi.quantita || 0)));
@@ -574,18 +574,24 @@ async function aggiungiPreordineAlleComande(id) {
     }
 
     // 3️⃣ Usa separaComanda per capire chi deve preparare cosa, dividendo perfettamente i contorni
-    const { cibo, bere, snack } = separaComanda(p.piatti || []);
+    const { cibo = [], bere = [], snack = [], extra1 = [], extra2 = [], extra3 = [] } = separaComanda(p.piatti || []);
 
-    // 4️⃣ Stati categorie
+    // 4️⃣ Stati categorie (Dichiariamo sempre tutti gli stati come fa la Cassa normale)
     const statoCucina = cibo.length > 0 ? "da fare" : "completato";
     const statoBere = bere.length > 0 ? "da fare" : "completato";
-    const statoSnack = window.settings.snackAbilitato && snack.length > 0 ? "da fare" : "completato";
+    const statoSnack = snack.length > 0 ? "da fare" : "completato";
+    const statoExtra1 = extra1.length > 0 ? "da fare" : "completato";
+    const statoExtra2 = extra2.length > 0 ? "da fare" : "completato";
+    const statoExtra3 = extra3.length > 0 ? "da fare" : "completato";
 
     // 5️⃣ noteDestinazioni
     let noteDestinazioni = ["cucina"];
     if (window.settings.noteDestinazioniAbilitate) {
         if (bere.length > 0) noteDestinazioni.push("bere");
         if (window.settings.snackAbilitato && snack.length > 0) noteDestinazioni.push("snack");
+        if (window.settings.extra1Abilitato && extra1.length > 0) noteDestinazioni.push("extra1");
+        if (window.settings.extra2Abilitato && extra2.length > 0) noteDestinazioni.push("extra2");
+        if (window.settings.extra3Abilitato && extra3.length > 0) noteDestinazioni.push("extra3");
     }
 
     // 6️⃣ Commento asporto
@@ -594,13 +600,16 @@ async function aggiungiPreordineAlleComande(id) {
     // 7️⃣ Metodo pagamento predefinito
     const metodoPagamento = p.metodoPagamento || "contanti";
 
-    // 8️⃣ Costruzione oggetto comanda
+    // 8️⃣ Costruzione oggetto comanda (Ora include i parametri degli extra!)
     const nuovaComanda = {
         numero: numeroComandaFinale,
         piatti: p.piatti || [],
         statoCucina,
         statoBere,
-        ...(window.settings.snackAbilitato && { statoSnack }),
+        statoSnack,
+        statoExtra1,
+        statoExtra2,
+        statoExtra3,
         timestamp: Date.now(),
         orario: new Date().toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" }),
         note: p.note || "",
