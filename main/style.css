@@ -11,7 +11,6 @@ body {
     padding: 20px;
     box-sizing: border-box;
 }
-
 /* Mostra il body solo dopo aver applicato il tema */
 body.tema-caricato {
     opacity: 1;
