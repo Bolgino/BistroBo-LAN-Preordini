@@ -810,6 +810,10 @@ async function initPreordiniClienti() {
 
         // Piatti della categoria
         items.forEach(([id, item]) => {
+            
+            // 🛑 NUOVO CONTROLLO: Se l'admin ha nascosto il piatto, salta la generazione grafica!
+            if (item.visibilePreordini === false) return;
+
             const piattoBloccato = item.bloccato === true;
             let ingredientiEsauriti = false;
             if (item.ingredienti) {
