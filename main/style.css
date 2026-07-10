@@ -1,4 +1,3 @@
-/* ================= RESET / BASE ================= */
 /* BODY inizialmente invisibile fino al caricamento del tema */
 body {
     opacity: 0;
@@ -10,6 +9,7 @@ body {
     padding: 20px;
     box-sizing: border-box;
 }
+
 /* Mostra il body solo dopo aver applicato il tema */
 body.tema-caricato {
     opacity: 1;
@@ -768,7 +768,10 @@ body.tema-primavera .scontoTxt { color: #2e7d32; }   /* verde medio */
 #chatInputCucina,
 #chatInputBere,
 #chatInputAdmin,
-#chatInputSnack {
+#chatInputSnack,
+#chatInputExtra1,
+#chatInputExtra2,
+#chatInputExtra3 {
   flex: 1;
   padding: 12px 18px;
   border-radius: 25px;
@@ -783,7 +786,10 @@ body.tema-primavera .scontoTxt { color: #2e7d32; }   /* verde medio */
 #chatInputCucina:focus,
 #chatInputBere:focus,
 #chatInputAdmin:focus,
-#chatInputSnack:focus {
+#chatInputSnack:focus,
+#chatInputExtra1:focus,
+#chatInputExtra2:focus,
+#chatInputExtra3:focus {
   background: #fff;
   border-color: #4caf50;
   box-shadow: 0 0 4px #4caf50;
@@ -794,7 +800,10 @@ body.tema-primavera .scontoTxt { color: #2e7d32; }   /* verde medio */
 #chatSendCucinaBtn,
 #chatSendBereBtn,
 #chatSendAdminBtn,
-#chatSendSnackBtn {
+#chatSendSnackBtn,
+#chatSendExtra1Btn,
+#chatSendExtra2Btn,
+#chatSendExtra3Btn {
   width: 46px;
   height: 46px;
   border: none;
@@ -810,7 +819,10 @@ body.tema-primavera .scontoTxt { color: #2e7d32; }   /* verde medio */
 #chatSendCucinaBtn:hover,
 #chatSendBereBtn:hover,
 #chatSendAdminBtn:hover,
-#chatSendSnackBtn:hover {
+#chatSendSnackBtn:hover,
+#chatSendExtra1Btn:hover,
+#chatSendExtra2Btn:hover,
+#chatSendExtra3Btn:hover {
   transform: scale(1.08);
   background: linear-gradient(135deg, #66bb6a, #388e3c);
 }
@@ -1207,14 +1219,14 @@ body.tema-estate button {
     font-size: 1em;
 }
 
-/* Ingredienti sotto al nome, ALLINEATI A SINISTRA */
+/* Ingredienti sotto al nome, ALLINEATI AL CENTRO */
 .menu-item .piatto-ingredienti {
     font-size: 0.78em;
     color: #444;
     line-height: 1.3;
     margin-top: 4px;
-    padding-left: 72px; /* si allinea sotto al nome */
-    text-align: left;   /* forza sinistra */
+    padding-left: 0;    /* Rimosso il rientro */
+    text-align: center; /* Forza l'allineamento al centro */
 }
 
 
@@ -1591,6 +1603,251 @@ body.tema-estate button {
     color: #9ca3af;    /* Grigio più chiaro al passaggio del mouse */
     text-decoration: underline;
 }
+
+/* ================= GRIGLIA MENU CASSA ================= */
+.menu-grid {
+    display: grid;
+    grid-template-columns: 1fr; /* 1 colonna in modalità normale */
+    gap: 6px;
+    margin-bottom: 20px;
+}
+
+/* MODALITÀ NORMALE (Lista) */
+.piatto-btn {
+    width: 100%;
+    padding: 5px 8px; /* Padding ridotto */
+    border-radius: 6px;
+    border: 1px solid #aaa;
+    background: #f5f5f5;
+    cursor: pointer;
+    color: #000 !important;
+    text-align: center;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    min-height: 45px; /* Evita che si schiaccino troppo se non ci sono ingredienti */
+}
+.piatto-nome { font-weight: bold; font-size: 0.95rem; color: #000 !important; } /* Ridotto da 1.1rem */
+.piatto-prezzo { font-size: 0.85rem; margin-top: 2px; color: #333 !important; } /* Ridotto da 1rem */
+.piatto-ing { font-size: 0.75rem; color: #555 !important; margin-top: 2px; } /* Ridotto da 0.8rem */
+
+/* ================= CASSA OTTIMIZZATA ================= */
+.cassa-ottimizzata .menu-grid {
+    grid-template-columns: repeat(auto-fill, minmax(70px, 1fr)); 
+    gap: 5px;
+}
+
+.cassa-ottimizzata .piatto-btn {
+    height: 75px; 
+    padding: 4px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    border: 2px solid #999;
+    background: #fefefe;
+    border-radius: 8px;
+    color: #000 !important; /* <--- FORZA IL NERO */
+}
+
+.cassa-ottimizzata .piatto-nome {
+    font-size: 0.70rem; 
+    font-weight: 900;
+    line-height: 1.1;
+    text-align: center;
+    white-space: pre-wrap; 
+    width: 100%;
+    color: #000 !important; /* <--- FORZA IL NERO */
+}
+
+.cassa-ottimizzata .piatto-prezzo {
+    font-size: 0.80rem;
+    color: #b71c1c !important; /* Rosso scuro per spiccare */
+    font-weight: bold;
+    margin-top: 3px;
+}
+
+.cassa-ottimizzata .piatto-ing {
+    display: none; /* Nasconde ingredienti */
+}
+/* ================= REVISIONE LAYOUT CASSA (NORMALE E OTTIMIZZATA) ================= */
+
+/* 1. Proporzioni Rigide: 1/3 (Scontrino) e 2/3 (Menu) SEMPRE attive */
+#aggiungiComandaTab > div:first-child {
+    display: grid !important;
+    grid-template-columns: 1fr 2fr !important; /* 1 colonna a sx, 2 colonne a dx */
+    gap: 15px !important;
+    align-items: start !important;
+}
+
+/* Impedisce ai box di sbordare */
+#aggiungiComandaTab > div:first-child > div {
+    flex: none !important;
+    max-width: 100% !important;
+    width: 100% !important;
+    min-width: 0 !important; /* CRITICO per le proporzioni */
+    box-sizing: border-box !important;
+}
+
+/* 2. Cassa Normale: Menu a 2 colonne per riga */
+.menu-grid {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important; /* 2 piatti affiancati */
+    gap: 8px !important;
+}
+
+/* 3. Cassa Ottimizzata: Ripristina i "Pulsantoni" su tutta l'area dei 2/3 */
+.cassa-ottimizzata .menu-grid {
+    display: grid !important;
+    grid-template-columns: repeat(auto-fill, minmax(70px, 1fr)) !important; /* Tanti piccoli pulsantoni in fila */
+    gap: 5px !important;
+}
+
+
+/* ================= COMPATTAMENTO SPECIFICO SOLO PER CASSA OTTIMIZZATA ================= */
+
+/* Fa scorrere il menu dei pulsantoni */
+.cassa-ottimizzata #aggiungiComandaTab > div:first-child > div:nth-child(2) {
+    max-height: 550px !important; 
+    overflow-y: auto !important; 
+}
+
+/* Scontrino molto più piccolo per far salire le note */
+.cassa-ottimizzata #comandaCorrente {
+    height: 160px !important; 
+    margin-bottom: 8px !important;
+}
+
+/* Box Note schiacciato per incastrarsi sotto lo scontrino */
+.cassa-ottimizzata #noteComanda {
+    height: 50px !important; 
+    min-height: 50px !important;
+    margin-bottom: 0 !important;
+}
+
+/* Testo check destinazioni più compatto */
+.cassa-ottimizzata #noteDestinazioniDiv {
+    margin-bottom: 4px !important;
+    font-size: 0.9em !important;
+}
+
+/* Barra Totali statica incollata sotto (Senza float) */
+.cassa-ottimizzata .stickyBar {
+    position: static !important;
+    box-shadow: none !important;
+    border: 1px solid #ccc !important;
+    border-radius: 8px !important;
+    margin-top: 10px !important; 
+    padding: 10px 15px !important;
+    background: #f8f9fa !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+}
+
+/* ================= RIORGANIZZAZIONE TOTALI E BOTTONE INVIA ================= */
+
+/* 1. Layout a Griglia per organizzare la sezione su tre righe */
+.stickyLeft {
+    display: grid !important;
+    grid-template-columns: auto 1fr !important; /* Colonna 1: Totale, Colonna 2: Pagato e Resto */
+    column-gap: 35px !important; /* Distanza tra Totale e Pagato */
+    row-gap: 12px !important;    /* Distanza verticale tra le righe */
+    align-items: center !important;
+    min-height: auto !important; 
+}
+
+/* 2. RIGA 1: Totale (a sinistra) */
+.stickyLeft > b:first-child {
+    grid-column: 1 !important;
+    font-size: 1.25rem !important;
+    white-space: nowrap !important;
+}
+
+/* 3. RIGA 1: Pagato e Resto (a destra, distanziati) */
+#rigaRestoPagato {
+    grid-column: 2 !important;
+    display: flex; /* Rimosso !important per permettere a JS di nasconderlo */
+    flex-direction: row !important; 
+    justify-content: flex-start !important;
+    gap: 40px !important; 
+    margin-top: 0 !important;
+    align-items: center !important;
+    font-size: 1.15rem !important;
+}
+
+/* Sicurezza aggiuntiva: se Javascript o le classi provano a nasconderlo, ha la precedenza */
+#rigaRestoPagato[style*="none"],
+#rigaRestoPagato.hidden {
+    display: none !important;
+}
+
+/* Sistema il suggerimento delle monetine per non farlo accavallare */
+#suggerimentoResto {
+    position: static !important; 
+    transform: none !important;
+    display: inline-flex !important;
+    margin-left: 10px !important;
+}
+
+/* 4. RIGA 2: Metodo di Pagamento sotto ai totali */
+.stickyLeft > div:nth-of-type(1) { 
+    grid-column: 1 / -1 !important; /* Prende tutta la larghezza e va a capo */
+    margin-bottom: 0 !important;
+}
+
+/* 5. RIGA 3: Bottoni Invia Comanda e Annulla "Più Snelli" e allineati */
+#inviaComandaBtn, #annullaUltimaVenditaBtn {
+    grid-column: 1 / -1 !important;
+    position: static !important; 
+    padding: 8px 32px !important; 
+    font-size: 1.1rem !important;
+    margin-top: 4px !important;
+    width: fit-content !important;
+    border: none !important; /* Previene disallineamenti in altezza */
+}
+/* ================= COMPATTAZIONE INTESTAZIONE EQUILIBRATA (TUTTI I PROFILI) ================= */
+
+/* 1. Blocco superiore: Simula a sx, Logout a dx, Orologio sotto. 
+   Uso :not(.hidden) per NON farlo apparire nella schermata di login! */
+#logoutDiv:not(.hidden) {
+    display: block !important; 
+    padding-bottom: 0 !important;
+    margin-bottom: 5px !important; /* Lascia un piccolo margine sotto */
+    margin-top: 5px !important; 
+}
+
+/* Orologio sotto al tasto Logout */
+#orologioDiv {
+    margin-top: 2px !important; 
+    margin-left: 0 !important;
+    text-align: right !important; 
+}
+
+/* 2. Nascondiamo i grandi titoli (Cassa, Cucina, ecc.) che rubano spazio */
+#cassaDiv > h2,
+#cucinaDiv > h2,
+#bereDiv > h2,
+#snackDiv > h2,
+#adminDiv > h2 {
+    display: none !important;
+}
+
+/* 3. Margini eleganti per la riga delle Tab con "un pelo di spazio in più" in alto */
+#cassaDiv > div:nth-of-type(1) {
+    margin-bottom: 8px !important;
+    margin-top: 12px !important; /* <--- Più spazio tra la barra logout e le tab */
+}
+
+#cucinaDiv > div:first-of-type,
+#bereDiv > div:first-of-type,
+#snackDiv > div:first-of-type,
+#adminDiv > div:first-of-type {
+    margin-bottom: 8px !important;
+    margin-top: 15px !important; /* <--- Spazio extra per staccare le tab dal simulatore */
+}
+
+/* I bottoni grigi stessi */
+.tabBtn {
+    margin-bottom: 4px !important;
+}
 /* ================= POPUP VARIANTI PIATTO ================= */
 .modal-overlay {
     position: fixed;
@@ -1651,3 +1908,602 @@ body.tema-estate button {
 .btn-chiudi { background: #999; }
 .btn-salva { background: #2196F3; font-weight: bold; }
 
+/* =========================================
+   BOX INGREDIENTI CRITICI E SOTTOSOGLIA
+   ========================================= */
+
+/* Il contenitore ora usa Flexbox per affiancare le colonne */
+.box-ingredienti-critici {
+    background-color: rgba(255, 255, 255, 0.95);
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 20px;
+    margin: 15px 0;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    display: flex;
+    gap: 30px; /* Spazio tra la colonna destra e sinistra */
+}
+
+/* Impostazione delle due colonne */
+.colonna-attenzione, .colonna-emergenza {
+    flex: 1; /* Si dividono lo spazio al 50% e 50% */
+    display: flex;
+    flex-direction: column; /* Mette i badge in colonna verticale */
+    gap: 8px; /* Spazio verticale tra un ingrediente e l'altro */
+}
+
+/* Titoli delle colonne */
+.titolo-colonna {
+    margin: 0 0 10px 0;
+    font-size: 1.05em;
+    color: #334155;
+    border-bottom: 2px solid #e2e8f0;
+    padding-bottom: 8px;
+}
+
+/* Testo quando la colonna è vuota */
+.nessun-dato {
+    font-size: 0.85em;
+    color: #94a3b8;
+    font-style: italic;
+    margin: 0;
+}
+
+/* Base per le righe degli ingredienti */
+.badge-sottosoglia, .badge-critico {
+    display: flex;
+    justify-content: space-between; /* Nome a sinistra, quantità a destra */
+    align-items: center;
+    padding: 10px 14px;
+    border-radius: 8px; /* Bordo meno tondo, fa più "lista" */
+    font-size: 0.95em;
+}
+
+/* Colori riga Attenzione (Sinistra) */
+.badge-sottosoglia {
+    background-color: #fff7ed;
+    color: #c2410c; 
+    border: 1px solid #fed7aa;
+}
+
+/* Colori riga Emergenza (Destra) */
+.badge-critico {
+    background-color: #fef2f2;
+    color: #b91c1c; 
+    border: 1px solid #fecaca;
+}
+
+/* --- RESPONSIVE: Se lo schermo è piccolo (es. cellulare), le colonne si mettono una sotto l'altra --- */
+@media (max-width: 768px) {
+    .box-ingredienti-critici {
+        flex-direction: column;
+        gap: 20px;
+    }
+}
+/* Badge Notifiche Chat */
+.chat-badge {
+    background-color: #F44336;
+    color: white;
+    border-radius: 50%;
+    padding: 2px 6px;
+    font-size: 0.8em;
+    margin-left: 5px;
+    vertical-align: super;
+    font-weight: bold;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+/* FORZA L'ASPETTO BIANCO/GRIGINO SUI BOTTONI CASSA (STANDARD E OTTIMIZZATA), ANNULLANDO I TEMI */
+.piatto-btn,
+.btn-cassa-ottimizzata {
+    background-image: none !important;
+    background-color: #fefefe !important;
+    color: #000 !important;
+}
+/* FORZA CHECKBOX E TESTO INSIEME PER LE NOTE IN CASSA */
+#noteDestinazioniDiv {
+    display: flex !important;
+    flex-wrap: wrap;
+    gap: 15px;
+    align-items: center;
+}
+#noteDestinazioniDiv[style*="none"] {
+    display: none !important;
+}
+
+#noteDestinazioniDiv label[style*="none"] {
+    display: none !important;
+}
+#noteDestinazioniDiv label {
+    display: inline-flex !important;
+    align-items: center;
+    white-space: nowrap; /* Impedisce che il nome vada a capo da solo */
+    margin: 0 !important;
+}
+#noteDestinazioniDiv input[type="checkbox"] {
+    margin-right: 6px !important;
+}
+
+/* ================= DASHBOARD BISTROBO (DESIGN INTEGRATO) ================= */
+.bb-dash-container {
+    background: #fff;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    border-top: 5px solid #673AB7; /* Viola, per abbinarsi al titolo del Centro Controllo */
+    margin-bottom: 20px;
+}
+.bb-dash-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 2px solid #eee;
+    padding-bottom: 10px; /* Ridotto */
+    margin-bottom: 15px;  /* Ridotto */
+}
+.bb-dash-header h3 { margin: 0; color: #673AB7; font-size: 1.6em; }
+
+.bb-status-badge {
+    padding: 6px 14px; border-radius: 20px; font-weight: bold; font-size: 0.95em; box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+}
+.bb-status-badge.ok { background: #e8f5e9; color: #2e7d32; border: 1px solid #c8e6c9;}
+.bb-status-badge.warn { background: #fff3e0; color: #e65100; border: 1px solid #ffe0b2;}
+.bb-status-badge.crit { background: #ffebee; color: #c62828; border: 1px solid #ffcdd2; animation: pulse 1.5s infinite; }
+
+.bb-dash-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 20px;
+}
+.bb-dash-card {
+    background: #ffffff;
+    border-radius: 16px; /* Angoli più dolci a tema app */
+    padding: 20px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.06); /* Ombra morbida */
+    border: 1px solid #f5f5f5;
+    border-top: 6px solid var(--dept-color, #ccc); /* Linea superiore per il reparto */
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.bb-dash-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.12);
+}
+.bb-card-title {
+    font-size: 1.25em; font-weight: 800; color: #333; margin-bottom: 15px;
+    display: flex; justify-content: space-between; align-items: center;
+}
+/* Barra di Carico */
+.bb-gauge-bg {
+    background: #f1f3f5; height: 8px; border-radius: 4px; width: 100%; margin-bottom: 18px; overflow: hidden;
+}
+.bb-gauge-fill { height: 100%; transition: width 0.4s ease, background-color 0.4s ease; border-radius: 4px; }
+
+.bb-stat-row { 
+    display: flex; justify-content: space-between; font-size: 0.95em; margin-bottom: 10px; color: #666; 
+    border-bottom: 1px dashed #eee; padding-bottom: 6px;
+}
+.bb-stat-row:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+.bb-stat-val { font-weight: bold; color: #222; }
+.bb-crit-text { color: #d32f2f; font-weight: bold; background: #ffebee; padding: 2px 6px; border-radius: 4px; font-size: 0.9em; }
+
+@keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.6; } 100% { opacity: 1; } }
+
+/* Modale Impostazioni Tempo Cassa */
+.modal-cassa-overlay {
+    position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.5);
+    display: flex; justify-content: center; align-items: center; z-index: 9999;
+}
+.modal-cassa-box { background: #fff; padding: 25px; border-radius: 12px; min-width: 300px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
+/* ================= VISTA SOMMARIO ================= */
+.btn-sommario {
+    background-color: #ff9800; /* Arancione base, sovrascritto inline negli altri reparti */
+    color: white;
+    font-weight: bold;
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-size: 1.1em;
+    cursor: pointer;
+    border: none;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+.btn-sommario:hover { transform: scale(1.05); }
+
+#lista-totali-sommario li {
+    font-size: 1.4rem; /* Ridotto (prima era 2rem) */
+    font-weight: bold;
+    padding: 10px 5px; /* Meno spazio tra le righe */
+    border-bottom: 1px solid #ccc;
+    display: flex;
+    align-items: center;
+    color: #333;
+}
+
+#lista-totali-sommario .qta-evidenza {
+    color: #d32f2f;
+    font-size: 1.6rem; /* Ridotto (prima era 2.5rem) */
+    margin-right: 15px;
+    background: #ffebee;
+    padding: 4px 15px;
+    border-radius: 8px;
+    border: 2px solid #ffcdd2;
+    min-width: 40px; /* Assicura che i numeri a 1 e 2 cifre siano allineati */
+    text-align: center;
+}
+/* ===========================================================
+   TEMA CHIARO
+   =========================================================== */
+
+body.tema-chiaro{
+    color:#222;
+}
+
+/* Sfondo */
+body.tema-chiaro #themeBackground{
+    background:linear-gradient(180deg,#ffffff,#f5f7fb,#edf3fb);
+}
+
+/* ---------- INPUT ---------- */
+
+body.tema-chiaro input,
+body.tema-chiaro textarea,
+body.tema-chiaro select{
+
+    background:#ffffff;
+    color:#222 ;
+    border:1px solid #cfd8dc ;
+}
+
+body.tema-chiaro input:focus,
+body.tema-chiaro textarea:focus,
+body.tema-chiaro select:focus{
+
+    background:white ;
+    border-color:#2196f3 ;
+    box-shadow:0 0 6px rgba(33,150,243,.25);
+}
+
+/* ---------- BOX ---------- */
+
+body.tema-chiaro .order,
+body.tema-chiaro .settingItem,
+body.tema-chiaro .menu-item,
+body.tema-chiaro .bb-dash-card,
+body.tema-chiaro .bb-dash-container,
+body.tema-chiaro .popup-content,
+body.tema-chiaro .modal-varianti,
+body.tema-chiaro #loginDiv,
+body.tema-chiaro #registerDiv,
+body.tema-chiaro #forgotPasswordDiv{
+
+    background:#ffffff ;
+    color:#222 ;
+    border:1px solid #e3e7eb;
+}
+
+/* ---------- CHAT ---------- */
+
+body.tema-chiaro .chat-container{
+
+    background:#f8fafc ;
+}
+
+body.tema-chiaro .chat-input-bar{
+
+    background:#ffffff ;
+}
+
+body.tema-chiaro .chat-message.other{
+
+    background:white ;
+    color:#222 ;
+}
+
+body.tema-chiaro .chat-message.me{
+
+    background:#dff7d7 ;
+    color:#222 ;
+}
+
+/* ---------- STICKY ---------- */
+
+body.tema-chiaro .stickyBar{
+
+    background:#ffffff ;
+    border-top:1px solid #ddd;
+}
+
+/* ---------- MENU CASSA ---------- */
+
+body.tema-chiaro .piatto-btn{
+
+    background:#fafafa ;
+    color:#222 ;
+    border:1px solid #d7d7d7 ;
+}
+
+body.tema-chiaro .piatto-nome{
+
+    color:#111 ;
+}
+
+body.tema-chiaro .piatto-prezzo{
+
+    color:#d32f2f ;
+}
+
+body.tema-chiaro .piatto-ing{
+
+    color:#666 ;
+}
+
+/* ---------- TESTI ---------- */
+
+body.tema-chiaro h1{
+
+    color:#1565c0;
+}
+
+body.tema-chiaro h3,
+body.tema-chiaro h4{
+
+    color:#1976d2;
+    text-shadow:none;
+}
+body.tema-chiaro button{
+
+    background:white;
+    color:#1565c0;
+    border:1px solid #90caf9;
+}
+/* ===========================================================
+   TEMA NOTTE (Sfondo Stellato, Box Neri, Testi Ottimizzati)
+   =========================================================== */
+
+/* 1. SFONDO PRINCIPALE CON STELLE */
+body.tema-notte, body.tema-notte #themeBackground {
+    background-color: #050B14 !important; /* Blu notte ancora più scuro */
+    background-image: 
+        radial-gradient(2px 2px at 20px 30px, #ffffff, rgba(0,0,0,0)),
+        radial-gradient(2px 2px at 40px 70px, #e2e8f0, rgba(0,0,0,0)),
+        radial-gradient(2px 2px at 90px 40px, #ffffff, rgba(0,0,0,0)),
+        radial-gradient(2px 2px at 160px 120px, #94a3b8, rgba(0,0,0,0)),
+        radial-gradient(3px 3px at 250px 250px, #ffffff, rgba(0,0,0,0)) !important;
+    background-repeat: repeat !important;
+    background-size: 300px 300px !important;
+    color: #F8FAFC !important;
+}
+
+/* 2. FORZA IL NERO SUI PANNELLI PRINCIPALI E RESET TRASPARENZE */
+body.tema-notte .tabContent > div,
+body.tema-notte #aggiungiComandaTab > div > div,
+body.tema-notte .tabContent div[style*="background"], 
+body.tema-notte .bb-dash-container,
+body.tema-notte .bb-dash-card,
+body.tema-notte #comandaCorrente,
+body.tema-notte .modal-varianti,
+body.tema-notte .popup-content,
+body.tema-notte .modal-cassa-box,
+body.tema-notte #loginDiv,
+body.tema-notte #registerDiv,
+body.tema-notte #forgotPasswordDiv,
+body.tema-notte .settingItem,
+body.tema-notte .stickyBar,
+body.tema-notte .sconto-item,
+body.tema-notte .modal-content {
+    background: #000000 !important;
+    background-color: #000000 !important;
+    background-image: none !important;
+    border-color: #1E293B !important;
+}
+
+/* Ripristina trasparenza per i contenitori strutturali */
+body.tema-notte #aggiungiComandaTab > div:first-child,
+body.tema-notte .tabContent,
+body.tema-notte #adminTabsContainer {
+    background: transparent !important;
+    background-color: transparent !important;
+    border: none !important;
+}
+
+/* 3. TABELLE STATISTICHE (Piatto, Qtà, Incasso) - Scurite! */
+body.tema-notte table {
+    background: #000000 !important;
+}
+body.tema-notte tr[style*="background"] {
+    background: #111827 !important;
+    background-color: #111827 !important;
+}
+body.tema-notte th {
+    background: #1E293B !important;
+    background-color: #1E293B !important;
+    color: #FFFFFF !important;
+    border-color: #334155 !important;
+}
+body.tema-notte td {
+    background: #000000 !important;
+    background-color: #000000 !important;
+    color: #E2E8F0 !important;
+    border-color: #334155 !important;
+}
+body.tema-notte td[style*="color:#2e7d32"] {
+    color: #34D399 !important; /* Verde brillante per l'incasso in notturna */
+}
+
+/* 4. COMANDE E MENU ITEMS */
+body.tema-notte .order,
+body.tema-notte .menu-item {
+    background: #000000 !important;
+    background-color: #000000 !important;
+    border: 1px solid #334155 !important;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.8) !important;
+}
+body.tema-notte .orderContent {
+    background: #111827 !important;
+    background-color: #111827 !important;
+}
+
+/* 5. FORZATURA TESTI GLOBALI */
+/* Disabilita i colori oscuri e forza testi chiari ovunque TRANNE che nei bottoni e nei badge */
+body.tema-notte div:not(.bb-status-badge):not(.bb-gauge-fill):not(.bb-gauge-bg), 
+body.tema-notte span:not(.bb-status-badge), 
+body.tema-notte p, 
+body.tema-notte small, 
+body.tema-notte label,
+body.tema-notte li {
+    color: #F8FAFC !important; 
+}
+
+/* Titoli in evidenza */
+body.tema-notte h1, body.tema-notte h2, body.tema-notte h3, body.tema-notte h4,
+body.tema-notte .bb-dash-header h3,
+body.tema-notte .bb-card-title,
+body.tema-notte .order-header,
+body.tema-notte .piatto-nome,
+body.tema-notte .bb-stat-val,
+body.tema-notte strong,
+body.tema-notte b {
+    color: #FFFFFF !important;
+    text-shadow: none !important;
+}
+/* Quando il tema notte è attivo, forza il testo nero dentro i bottoni dei piatti */
+body.tema-notte .piatto-btn span,
+body.tema-notte .piatto-btn small,
+body.tema-notte .btn-cassa-ottimizzata span,
+body.tema-notte .btn-cassa-ottimizzata small {
+    color: #000000 !important; /* Forza il nero */
+}
+
+/* 6. BOTTONI CASSA E "CONTORNI" (Testo NERO su Sfondo CHIARO per massima leggibilità) */
+body.tema-notte .tabBtn {
+    color: #000000 !important;
+}
+body.tema-notte .tabBtn.active {
+    color: #FFFFFF !important;
+}
+
+/* Tutti i bottoncini dentro il carrello della cassa (+, -, extra, contorni) */
+body.tema-notte #comandaCorrente button {
+    background: #E2E8F0 !important;
+    background-color: #E2E8F0 !important;
+    color: #000000 !important;
+    border: 1px solid #94A3B8 !important;
+}
+
+/* Distrugge i bottoni con sfondo bianco JS inline (Es. "Rinomina") */
+body.tema-notte button[style*="background: #fff"],
+body.tema-notte button[style*="background: white"],
+body.tema-notte button[style*="background-color: #fff"],
+body.tema-notte button[style*="background-color: white"] {
+    background: #E2E8F0 !important;
+    background-color: #E2E8F0 !important;
+    color: #000000 !important;
+}
+
+/* Bottoni Menu in Cassa Principale (Fondo chiaro, Scritte nere) */
+body.tema-notte .piatto-btn,
+body.tema-notte .btn-cassa-ottimizzata {
+    background: #F8FAFC !important; 
+    background-color: #F8FAFC !important; 
+    border: 1px solid #94A3B8 !important;
+}
+/* La regola magica: vince su qualsiasi cosa e forza il nero assoluto per titoli e ingredienti */
+body.tema-notte .piatto-btn *,
+body.tema-notte .btn-cassa-ottimizzata *,
+body.tema-notte .piatto-btn .piatto-nome,
+body.tema-notte .btn-cassa-ottimizzata .piatto-nome,
+body.tema-notte .piatto-btn .piatto-ing {
+    color: #000000 !important;
+    text-shadow: none !important;
+}
+body.tema-notte .piatto-prezzo,
+body.tema-notte .piatto-btn .piatto-prezzo {
+    color: #b71c1c !important; 
+    font-weight: bold !important;
+}
+
+/* Colori specifici Asporto/Sconti */
+body.tema-notte .prezzo,
+body.tema-notte .totale-testo {
+    color: #FDE047 !important; /* Giallo */
+}
+body.tema-notte .scontoTxt,
+body.tema-notte .asportoText {
+    color: #ffb74d !important;
+}
+
+/* 7. CENTRO CONTROLLO (Barra Neon e Badge) */
+/* Badge "Flusso Regolare" / "Attenzione" */
+body.tema-notte div.bb-status-badge.ok { background: #064E3B !important; background-color: #064E3B !important; color: #34D399 !important; border: 1px solid #059669 !important; }
+body.tema-notte div.bb-status-badge.warn { background: #78350F !important; background-color: #78350F !important; color: #FBBF24 !important; border: 1px solid #D97706 !important; }
+body.tema-notte div.bb-status-badge.crit { background: #7F1D1D !important; background-color: #7F1D1D !important; color: #F87171 !important; border: 1px solid #DC2626 !important; }
+
+/* Barra di Carico "Neon" */
+body.tema-notte div.bb-gauge-bg {
+    background: #0F172A !important; 
+    background-color: #0F172A !important;
+    border: 1px solid #1E293B !important;
+    border-radius: 8px !important;
+    box-shadow: inset 0 0 5px rgba(0,0,0,0.5) !important;
+}
+body.tema-notte div.bb-gauge-fill {
+    background: #00E5FF !important; /* Ciano brillante */
+    background-color: #00E5FF !important;
+    box-shadow: 0 0 8px #00E5FF, 0 0 15px #00E5FF !important; /* Effetto NEON */
+    border-radius: 8px !important;
+}
+
+/* 8. CAMPI INPUT, SELECT E TEXTAREA */
+body.tema-notte input,
+body.tema-notte select,
+body.tema-notte textarea {
+    background: #121A2F !important;
+    background-color: #121A2F !important;
+    color: #FFFFFF !important;
+    border: 1px solid #334155 !important;
+}
+body.tema-notte input:focus,
+body.tema-notte select:focus,
+body.tema-notte textarea:focus {
+    border-color: #3b82f6 !important;
+    box-shadow: 0 0 6px rgba(59, 130, 246, 0.5) !important;
+}
+
+/* 9. CHAT */
+body.tema-notte .chat-container,
+body.tema-notte .chat-input-bar {
+    background: #000000 !important;
+    border-color: #1E293B !important;
+}
+body.tema-notte .chat-message.other {
+    background: #1E293B !important;
+    color: #FFFFFF !important;
+}
+body.tema-notte .chat-message.me {
+    background: #064E3B !important;
+    color: #FFFFFF !important;
+}
+
+/* 10. FIX BADGE E RITARDI */
+body.tema-notte div[style*="background-color: #ffebee"],
+body.tema-notte div[style*="background-color: rgb(255, 235, 238)"] {
+    background-color: #4A0000 !important;
+    color: #FFFFFF !important;
+    border: 1px solid #FF8A80 !important;
+}
+
+/* 11. LOADER DI AVVIO A TEMA NOTTE */
+body.tema-notte #loader {
+    --loader-bg: radial-gradient(circle, #0F172A 0%, #000000 100%);
+    --loader-text: #3B82F6;
+}
+body.tema-notte #loader .spinner,
+body.tema-notte #offlineLoader .spinner {
+    border-top-color: #3b82f6 !important;
+    box-shadow: 0 0 25px rgba(59, 130, 246, 0.5) !important;
+}
+/* Fix specifico per il bottone Coperto */
+body.tema-notte #btnCopertoCassa, 
+body.tema-notte #btnCopertoCassa div {
+    background-color: #F8FAFC !important;
+    color: #000000 !important;
+}
