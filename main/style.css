@@ -2553,7 +2553,7 @@ body.tema-astronave .orderContent{ background:#09131D !important; }
 
 /* Testi Generici */
 body.tema-astronave div:not(.bb-status-badge):not(.bb-gauge-fill):not(.bb-gauge-bg):not(.piatto-btn):not(.btn-cassa-ottimizzata),
-body.tema-astronave span:not(.bb-status-badge):not(.piatto-nome),
+body.tema-astronave span:not(.bb-status-badge),
 body.tema-astronave p, body.tema-astronave small:not(.piatto-prezzo), body.tema-astronave label, body.tema-astronave li{ color:#D0FFFF !important; text-shadow: 0 0 2px rgba(0,255,255,.3); }
 
 /* Titoli Generici */
@@ -2586,19 +2586,6 @@ body.tema-astronave #btnCopertoCassa:hover {
     background-color: #FFFFFF !important;
     box-shadow: 0 0 8px #00D9FF !important;
     transform: translateY(-1px);
-}
-/* Forza il nero assoluto per tutti gli elementi figli dei bottoni piatti */
-body.tema-astronave .piatto-btn *,
-body.tema-astronave .btn-cassa-ottimizzata *,
-body.tema-astronave #btnCopertoCassa div {
-    color: #000000 !important;
-    text-shadow: none !important;
-}
-/* Eccezione: il prezzo resta rosso/scuro per leggibilità */
-body.tema-astronave .piatto-btn .piatto-prezzo,
-body.tema-astronave .btn-cassa-ottimizzata .piatto-prezzo {
-    color: #b71c1c !important;
-    font-weight: bold !important;
 }
 
 /* Altri Testi */
@@ -2695,8 +2682,18 @@ body.tema-astronave .menu-grid button span {
 }
 /* Forza il ROSSO SCURO (o nero se preferisci) sui prezzi (il tag <small>) */
 body.tema-astronave #aggiungiComandaTab button small,
-body.tema-astronave .menu-grid button small {
+body.tema-astronave .menu-grid button small,
+body.tema-notte #aggiungiComandaTab button small,
+body.tema-notte .menu-grid button small {
     color: #b71c1c !important; /* Rosso scuro per far risaltare il prezzo */
     text-shadow: none !important;
     font-weight: bold !important;
+}
+/* Titoli categoria (Cibi, Bevande, Snack) - Tema Notte */
+body.tema-notte h5,
+body.tema-notte h5[style*="color"] {
+    color: #FFFFFF !important;
+    text-shadow: none !important;
+    border-bottom-color: #334155 !important;
+    font-size: 1.1em !important;
 }
