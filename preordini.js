@@ -1047,16 +1047,12 @@ async function initPreordiniClienti() {
         carrelloCliente.splice(index, 1);
         aggiornaRiepilogoCarrelloUI();
     }
-    // Listener combinato ingredienti + bloccato
-    // Listener combinato ingredienti + bloccato
     function aggiornaDisponibilitaPiatti(menuData, ingredientiDB) {
         document.querySelectorAll(".menu-item").forEach(riga => {
-            // Cerchiamo il bottone intercettando tutte le possibili azioni di click
             const btnAggiungi = riga.querySelector("button[onclick^='apriPopupPersonalizzaCliente'], button[onclick^='aggiungiVeloceCarrello'], button[onclick^='apriPopupCombo']");
             const labelEsaurito = riga.querySelector(".piatto-esaurito-label");
             if (!btnAggiungi) return;
 
-            // Estraiamo l'ID del piatto dalla funzione onclick
             const match = btnAggiungi.getAttribute('onclick').match(/'([^']+)'/);
             if (!match) return;
             const id = match[1];
@@ -1064,18 +1060,7 @@ async function initPreordiniClienti() {
             const item = menuData[id];
             if (!item) return;
 
-            // Determina se il piatto è esaurito
-            let esaurito = item.bloccato === true;
-            if (item.ingredienti) {
-                for (const ing of item.ingredienti) {
-                    const dbIng = ingredientiDB[ing.id];
-                    if (dbIng && dbIng.disponibile === false) {
-                        esaurito = true;
-                        break;
-                    }
-                }
-            }
-            // Determina se il piatto è esaurito da ingredienti o blocco
+            // 1. Determina se il piatto è esaurito da ingredienti o blocco admin
             let esaurito = item.bloccato === true;
             if (item.ingredienti) {
                 for (const ing of item.ingredienti) {
@@ -1087,7 +1072,7 @@ async function initPreordiniClienti() {
                 }
             }
 
-            // CONTROLLO CHIUSURA REPARTO
+            // 2. Controllo Chiusura Reparto
             let ctg = (item.categoria || "cibi").toLowerCase().trim();
             const lE1 = (window.nomiRepartiExtra?.extra1 || "").toLowerCase().trim();
             const lE2 = (window.nomiRepartiExtra?.extra2 || "").toLowerCase().trim();
@@ -1110,12 +1095,10 @@ async function initPreordiniClienti() {
 
             if (isChiuso) esaurito = true;
 
-            // AGGIORNAMENTO GRAFICA BOTTONE
+            // 3. Aggiornamento Grafico Bottone
             if (esaurito) {
                 riga.classList.add("esaurito");
                 btnAggiungi.disabled = true;
-                
-                // Colora diversamente se è "Chiuso" o "Esaurito"
                 btnAggiungi.style.background = isChiuso ? "#eceff1" : "#e0e0e0";
                 btnAggiungi.style.color = isChiuso ? "#78909c" : "#999";
                 btnAggiungi.style.border = isChiuso ? "2px dashed #90a4ae" : "none";
@@ -1144,7 +1127,6 @@ async function initPreordiniClienti() {
             }
         });
 
-        // Richiama la nuova funzione del carrello (se è già caricata in fondo al file)
         if (typeof aggiornaRiepilogoCarrelloUI === "function") {
             aggiornaRiepilogoCarrelloUI();
         }
