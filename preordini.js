@@ -800,7 +800,8 @@ window.aggiungiVeloceCarrello = function(id) {
         contorniScelti: [],
         extraPrezzo: 0,
         quantita: 1,
-        maxVariantiGratis: piatto.maxVariantiGratis || 0
+        maxVariantiGratis: piatto.maxVariantiGratis || 0,
+        tags: item.tags || {}
     });
     
     if (typeof aggiornaRiepilogoCarrelloUI === "function") aggiornaRiepilogoCarrelloUI();
@@ -2332,7 +2333,8 @@ function renderListaPiattiComboCliente(piattoCombo) {
                     prezzoOriginale: c.prezzoBase,
                     prezzoPagato: (index >= maxGratis) ? c.prezzoBase : 0, 
                     isGratis: (index < maxGratis),
-                    categoria: menuItems[c.id]?.categoria || "cibi"
+                    categoria: menuItems[c.id]?.categoria || "cibi",
+                    tags: item.tags || {}
                 });
             });
 
