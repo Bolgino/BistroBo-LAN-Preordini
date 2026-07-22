@@ -912,11 +912,8 @@ async function initPreordiniClienti() {
 
 
         // Piatti della categoria
-       // Piatti della categoria
         items.forEach(([id, item]) => {
             
-           const piattoBloccato = item.bloccato === true;
-
            const piattoBloccato = item.bloccato === true;
             let ingredientiEsauriti = false;
             if (item.ingredienti) {
