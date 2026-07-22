@@ -3523,3 +3523,15 @@ body.tema-notte #adminTabsContainer .admin-dropdown-content .tabBtn:hover {
     background-color: #1E293B !important; 
     color: #FFFFFF !important;
 }
+/* ===========================================================
+   FIX BOX INFORMATIVO TAVOLO PREORDINI (TEMI SCURI)
+=========================================================== */
+#tavoloInfoBox {
+    background: #e8f5e9; color: #2e7d32; padding: 15px; border-radius: 12px; text-align: center; font-weight: bold; border: 1px solid #c8e6c9; margin-bottom: 10px;
+}
+body.tema-notte #tavoloInfoBox {
+    background: #064E3B !important; color: #34D399 !important; border: 1px solid #059669 !important; box-shadow: 0 4px 10px rgba(0,0,0,0.3) !important;
+}
+body.tema-astronave #tavoloInfoBox {
+    background: #003B2A !important; color: #4DFFB2 !important; border: 1px solid #00B35F !important; box-shadow: inset 0 0 8px rgba(0,255,136,.2) !important; text-shadow: none !important;
+}
